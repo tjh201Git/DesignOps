@@ -23,12 +23,12 @@ nodeLocations = linspace(0,L,N);
 
 %plot the results
 subplot(2,1,1) %tells MATLAB you want 2 subplots in one figure (check the docs for more info) 
-plot(nodeLocations,delta,'ko-') %plot the deflection (delta) at each node location across the blade
+plot(nodeLocations,delta,'ko-','Color','w') %plot the deflection (delta) at each node location across the blade
 xlabel('distance, m') %set labels
 ylabel('deflection, mm')
 
 subplot(2,1,2) %plot on the second subplot
-plot(nodeLocations,(M*(0.12*c)./I)/(1e6),'ko-') %plot the bending stress (M*y / I) at every node location
+plot(nodeLocations,(M*(0.12*c)./I)/(1e6),'ko-','Color','w') %plot the bending stress (M*y / I) at every node location
 xlabel('distance, m') %set labels
 ylabel('Bending Stress, MPa')
 
