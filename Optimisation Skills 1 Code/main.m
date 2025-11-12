@@ -1,17 +1,29 @@
 clc, clear all, close all
 
-N = 100; %the beam solver discretises beam into 100 nodes
-t = 1e-3*ones(1,N); %set the skin thickess of the blade at every node
-c = 0.15; %define the chord length - KEEP FIXED
+youngs_modulus = 2e9;
+yield_strength = 30e6;
 
-I = secondMomentArea(t,c); %caclulate the second moment of area
+N = 100;
+chord = 0.15;
+dist_from_neutral_axis = 0.12*chord;
+thicknesses = [0.0325];
+
+
+% aim is to maximise second moment of area, whilst minimising volume
+
+engFuncs = makeEngFuncs;
+
+volume = engFuncs.findVolumeSkinMethodChunks(chord, thicknesses)
+
+I = engFuncs.findSecondMomentAreaSkinMethod(chord, thicknesses(1));
+I_array = I * ones(N);
 
 
 %submit to beamBending:
 % number of nodes for numerical solve, N
 % vector of second moment of area values across the span, I 
 % (I must have N elements)
-[delta, M, V, L, P]  = beamBending(N,I); 
+[delta, M, V, L, P]  = beamBending(N,I_array); 
 %beamBending function returns:
 %beam deflection, delta
 %bending moment distribution, M
@@ -35,23 +47,7 @@ xlabel('distance, m') %set labels
 ylabel('deflection, mm')
 
 subplot(2,1,2) %plot on the second subplot
-bendingStress = (M*(0.12*c)./I)/(1e6);
+bendingStress = (M*dist_from_neutral_axis./I)/(1e6);
 plot(nodeLocations, bendingStress,'ko-') %plot the bending stress (M*y / I) at every node location
 xlabel('distance, m') %set labels
 ylabel('Bending Stress, MPa')
-
-
-%define the second moment of area of each blade cross section
-%see approaches outlined in the theory document on moodle
-function I = secondMomentArea(t,c)
-
-    %for the sake of having a working script, I am going to make a simple
-    %model of how the second moment of area scales with thickness of
-    %material (say skin or box section) and the chord length of the blade
-
-    I = (10e-2)*c.*t.^2;
-
-    %This is a placeholder for you to add in a real second moment of area
-    %calculation.
-
-end
