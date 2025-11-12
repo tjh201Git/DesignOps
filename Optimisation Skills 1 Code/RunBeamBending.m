@@ -30,7 +30,7 @@ theme(fig, "light");
 
 %plot the results
 subplot(2,1,1) %tells MATLAB you want 2 subplots in one figure (check the docs for more info) 
-plot(nodeLocations,delta,'ko-') %plot the deflection (delta) at each node location across the blade
+plot(nodeLocations,delta,'ko-','Color','w') %plot the deflection (delta) at each node location across the blade
 xlabel('distance, m') %set labels
 ylabel('deflection, mm')
 
