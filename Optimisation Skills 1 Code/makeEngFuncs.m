@@ -1,5 +1,5 @@
 function funs = makeEngFuncs
-    funs.findVolumeSkinMethodChunks = @findVolumeSkinMethodChunks;
+    funs.findVolumeSkinMethod = @findVolumeSkinMethod;
     funs.findSecondMomentAreaSkinMethod = @findSecondMomentAreaSkinMethod;
     funs.bendingStress = @bendingStress;
 end
@@ -99,15 +99,17 @@ end
 % aerofoil, or we could have it in steps, or we could model it with a
 % function. Since we want optimisation, i think we should do it in small
 % chunks / steps
-function V = findVolumeSkinMethodChunks(chord, thicknesses)
+function V = findVolumeSkinMethod(chord, thickness)
 
-    num_thicknesses = length(thicknesses);
-    chunk_length = chord / num_thicknesses;
+    % num_thicknesses = length(thicknesses);
+    % chunk_length = chord / num_thicknesses;
+    % 
+    % V = 0;
+    % for i = 1:num_thicknesses
+    %     V = V + approxCrossSectAreaSkinMethod(thicknesses(i), chord) * chunk_length;
+    % end
 
-    V = 0;
-    for i = 1:num_thicknesses
-        V = V + approxCrossSectAreaSkinMethod(thicknesses(i), chord) * chunk_length;
-    end
+    V = approxCrossSectAreaSkinMethod(thickness, chord) * chord;
 
 end
 
