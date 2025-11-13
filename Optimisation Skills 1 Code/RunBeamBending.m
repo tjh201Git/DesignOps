@@ -2,9 +2,10 @@ clc, clear all, close all
 
 N = 100; %the beam solver discretises beam into 100 nodes
 t = 1e-3*ones(1,N); %set the skin thickess of the blade at every node
-c = 0.1; %define the chord length - KEEP FIXED
+c = 0.15; %define the chord length - KEEP FIXED
 
 I = secondMomentArea(t,c); %caclulate the second moment of area
+
 
 %submit to beamBending:
 % number of nodes for numerical solve, N
@@ -21,6 +22,12 @@ I = secondMomentArea(t,c); %caclulate the second moment of area
 %define the spanwise position of every node (in meters)
 nodeLocations = linspace(0,L,N);
 
+% Create a figure
+fig = figure;
+
+% Set the theme to dark
+theme(fig, "light");
+
 %plot the results
 subplot(2,1,1) %tells MATLAB you want 2 subplots in one figure (check the docs for more info) 
 plot(nodeLocations,delta,'ko-','Color','w') %plot the deflection (delta) at each node location across the blade
@@ -28,7 +35,8 @@ xlabel('distance, m') %set labels
 ylabel('deflection, mm')
 
 subplot(2,1,2) %plot on the second subplot
-plot(nodeLocations,(M*(0.12*c)./I)/(1e6),'ko-','Color','w') %plot the bending stress (M*y / I) at every node location
+bendingStress = (M*(0.12*c)./I)/(1e6);
+plot(nodeLocations, bendingStress,'ko-') %plot the bending stress (M*y / I) at every node location
 xlabel('distance, m') %set labels
 ylabel('Bending Stress, MPa')
 
