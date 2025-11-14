@@ -93,19 +93,81 @@ hold off;
 %=======Polynomial Surrogate=====
 
 %Second order Polynomial in 3 variables
-% y^​=a0​+a1​x1​+a2​x2​+a3​x3​+a4​x12​+a5​x22​+a6​x32​+a7​x1​x2​+a8​x1​x3​+a9​x2​x3
+%   ŷ = a0
+%      + a1*x1 + a2*x2 + a3*x3      (linear terms)
+%      + a4*x1^2 + a5*x2^2 + a6*x3^2   (quadratic terms)
+%      + a7*x1*x2 + a8*x1*x3 + a9*x2*x3  (interaction terms)
 % 
-% 10 basis functions [1,x1​,x2​,x3​,x12​,x22​,x32​,x1​x2​,x1​x3​,x2​x3​]​
+% 10 unknown coefficients (a0 ... a9)
+% 
+% Determine the unknown coefficients with linear regression
+%
+%       y ≈ Φ * A
+%
+% where:
+%   Φ is the matrix of basis functions,
+%   A is the coefficient vector,
+%   y is the vector of MCSI outputs.
+%
 
-x1 = samples(:,1);
-x2 = samples(:,2);
-x3 = samples(:,3);
+%Fit the surrogate on normalized inputs
+Xmin = [minAdvert, minTarget, minSkew]; % Normalise samples to [0,1]
+Xmax = [maxAdvert, maxTarget, maxSkew];
 
-Phi = [ ...                        %
-    ones(size(samples,1),1), ...   % 1
-    x1, x2, x3, ...                % linear terms
-    x1.^2, x2.^2, x3.^2, ...       % quadratic terms
-    x1.*x2, x1.*x3, x2.*x3];       % interaction terms
+X_norm = (samples - Xmin) ./ (Xmax - Xmin);  % 20x3 matrix in [0,1]​
 
+x1 = X_norm(:,1); %extract each input dimension from the 20
+x2 = X_norm(:,2);
+x3 = X_norm(:,3);
+
+Phi = [ ... % Phi = [1, x1, x2, x3, x1^2, x2^2, x3^2, x1*x2, x1*x3, x2*x3]
+    ones(Nodes,1), ...   
+    x1, x2, x3, ...               
+    x1.^2, x2.^2, x3.^2, ...       
+    x1.*x2, x1.*x3, x2.*x3];       
+
+A = pinv(Phi) * MCSI_samples; % Solve for coefficients using pseudo-inverse
+                              % find the least squares solution that fits
+
+%Build query points and visualise the estimated predicted polynomial                              
+
+%First Create a 2000 by 3 matrix to visualise the points(2000 is a
+%resolution)
+Xq = [ ...
+    rand(2000,1)*(maxAdvert-minAdvert) + minAdvert, ...
+    rand(2000,1)*(maxTarget-minTarget) + minTarget, ...
+    rand(2000,1)*(maxSkew-minSkew)     + minSkew   ];
+
+
+Xq_norm = (Xq - Xmin) ./ (Xmax - Xmin); % Normalise the query points to 0-1
+%Surrogate modelling in a normalised space improves fit quality
+
+x1qn = Xq_norm(:,1);
+x2qn = Xq_norm(:,2);
+x3qn = Xq_norm(:,3);
+
+Phi_q = [ ...        %Constrauct the same Phi matrix for the query points
+    ones(size(Xq,1),1), ...
+    x1qn, x2qn, x3qn, ...
+    x1qn.^2, x2qn.^2, x3qn.^2, ...
+    x1qn.*x2qn, x1qn.*x3qn, x2qn.*x3qn ];
+
+%Evaluate the surrogate model at each query pont 
+yhat = Phi_q * A;                     % nq^2 x 1
+
+figure;
+scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat, 'filled');
+hold on;
+
+% Plot the samples
+scatter3(samples(:,1), samples(:,2), samples(:,3),60, MCSI_samples, 'filled', 'MarkerEdgeColor','k');
+
+xlabel('x1 (Advert)');
+ylabel('x2 (Target)');
+zlabel('x3 (Skew)');
+title('4D Scatter of Surrogate Model (colour = predicted MCSI)');
+colorbar;
+grid on;
+view(45, 25);
 
 %=======RBF Surrogate=====
