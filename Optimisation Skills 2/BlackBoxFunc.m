@@ -61,14 +61,16 @@ MCSI_samples = exampFunc(samples);
 
 %=================Plotting==========================
 
-sliceSkew = 0.5; %Not sure yet but skew which adds the z value of the graph
+%sliceSkew = 0.5; %Not sure yet but skew which adds the z value of the graph
+%sliceSkew * ones(numel(x),1)
+
 % which is same length as x and y
 %important because "MATLAB fsurf only plots 2 variables, 
 %but my function needs 3, so I must create a constant third vector 
 %using ones(numel(x),1), multiply by fixedSkew,
 %and that gives the 3rd input column."
 
-fsurf(@(x, y) reshape(exampFunc([x(:), y(:),sliceSkew * ones(numel(x),1)]), size(x)), ...
+fsurf(@(x, y) reshape(exampFunc([x(:), y(:)]), size(x)), ...
     'MeshDensity', 100, ...
     'ShowContours', 'on', ...
     'LineStyle', ':'); %reshaped and add audience skew because fsurf can only plot for 2 variables
