@@ -8,24 +8,14 @@
 % 5) repeat until the highest MCSI is found
 %====================================================================
 
-advertSpend = 0 %Input 1, 0-200
-targetSpend = 0 %Input 2, 0-60
-audienceSkew = 0 %Input 3, 0-1
+minAdvert = -5;
+maxAdvert = 5;
+minTarget = -5;
+maxTarget = 5;
+minSkew = -5;
+maxSkew = 5;
 
-
-x = [advertSpend, targetSpend, audienceSkew]; %pack into a row vector
-
-MCSI = exampFunc(x); %input the inputs into the 'blackbox'
-
-
-%===========Star Discrepency===================
-
-minAdvert = 0;
-maxAdvert = 200;
-minTarget = 0;
-maxTarget = 60;
-minSkew = 0;
-maxSkew = 1;
+%===========Star Discrepency Sampling Method===================
 
 Nodes  = 20;
 Dimensions  = 3; 
@@ -41,7 +31,7 @@ bestXn  = []; %placeholder for best design
 
 for k = 1:numSets %For each set
 
-    Xn_cand = rand(N, D); %Generate a random N×D point set in the hypercube
+    Xn_cand = rand(Nodes, Dimensions); %Generate a random N×D point set in the hypercube
     sD_cand = starD(Xn_cand); %Find the star disrepency
 
     if sD_cand < bestSD %Keep the smallest discrepency so far
@@ -53,39 +43,57 @@ end
 fprintf('Best star discrepancy (normalised space) = %.4f\n', bestSD);
 
 
-
 % Convert the best point set, calculated above, from the normalised 
 % hypercube [0,1]^D into the actual coordinate space used by the problem.
 % Each column of 'bestXn' contains values in [0,1], so we apply a
-% linear scaling to map them into:
-%   advertSpend  → [minAdvert,  maxAdvert]
-%   targetSpend  → [minTarget,  maxTarget]
-%   audienceSkew → [minSkew,    maxSkew]
-% This produces a 20×3 matrix containing evenly spaced
-% sample points expressed in real-world units.
+% linear scaling to map them back into their ranges:
+%   advertSpend  → [0, 200]
+%   targetSpend  → [0, 60]
+%   audienceSkew → [0, 1]
+% This produces the 20×3 matrix containing evenly spaced sample points
 
-samples = zeros(N,3); %hold samples
-samples(:,1) = minAdvert + bestXn(:,1) * (maxAdvert - minAdvert); 
-samples(:,2) = minTarget + bestXn(:,2) * (maxTarget - minTarget); 
-samples(:,3) = minSkew   + bestXn(:,3) * (maxSkew   - minSkew);  
+samples = zeros(Nodes,Dimensions); %hold samples
+samples(:,1) = minAdvert + bestXn(:,1) * (maxAdvert - minAdvert); %scale
+samples(:,2) = minTarget + bestXn(:,2) * (maxTarget - minTarget); %scale
+samples(:,3) = minSkew   + bestXn(:,3) * (maxSkew   - minSkew);  %scale
 
+MCSI_samples = exampFunc(samples); 
 
+%=================Plotting==========================
 
-%==============================
+sliceSkew = 0.5; %Not sure yet but skew which adds the z value of the graph
+% which is same length as x and y
+%important because "MATLAB fsurf only plots 2 variables, 
+%but my function needs 3, so I must create a constant third vector 
+%using ones(numel(x),1), multiply by fixedSkew,
+%and that gives the 3rd input column."
 
-fprintf('MCSI for this point = %.4f\n', MCSI);
-
-fsurf(@(x, y) reshape(exampFunc([x(:), y(:),audienceSkew * ones(numel(x),1)]), size(x)), ...
+fsurf(@(x, y) reshape(exampFunc([x(:), y(:),sliceSkew * ones(numel(x),1)]), size(x)), ...
     'MeshDensity', 100, ...
     'ShowContours', 'on', ...
     'LineStyle', ':'); %reshaped and add audience skew because fsurf can only plot for 2 variables
 hold on;
 
-plot3(advertSpend, targetSpend, MCSI, 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
 
 xlabel('x');
 ylabel('y');
 zlabel('exampFunc(x, y)');
 title('Surface Plot of exampFunc');
 
+scatter3(samples(:,1),samples(:,2), MCSI_samples, 50, MCSI_samples, 'filled');
+
 hold off;
+
+
+%===========Build a Surrogate Model for Fitting==============================
+
+
+%=======Polynomial Surrogate=====
+
+%Second order Polynomial in 3 variables
+%
+
+x1 = samples(:,1);
+x2 = samples(:,2);
+x3 = samples(:,3);
+

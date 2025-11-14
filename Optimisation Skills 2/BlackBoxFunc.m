@@ -15,7 +15,7 @@ maxTarget = 5;
 minSkew = -5;
 maxSkew = 5;
 
-%===========Star Discrepency===================
+%===========Star Discrepency Sampling Method===================
 
 Nodes  = 20;
 Dimensions  = 3; 
@@ -43,7 +43,6 @@ end
 fprintf('Best star discrepancy (normalised space) = %.4f\n', bestSD);
 
 
-
 % Convert the best point set, calculated above, from the normalised 
 % hypercube [0,1]^D into the actual coordinate space used by the problem.
 % Each column of 'bestXn' contains values in [0,1], so we apply a
@@ -60,7 +59,7 @@ samples(:,3) = minSkew   + bestXn(:,3) * (maxSkew   - minSkew);  %scale
 
 MCSI_samples = exampFunc(samples); 
 
-%===========================================
+%=================Plotting==========================
 
 sliceSkew = 0.5; %Not sure yet but skew which adds the z value of the graph
 % which is same length as x and y
@@ -81,8 +80,30 @@ ylabel('y');
 zlabel('exampFunc(x, y)');
 title('Surface Plot of exampFunc');
 
-
 scatter3(samples(:,1),samples(:,2), MCSI_samples, 50, MCSI_samples, 'filled');
 
-
 hold off;
+
+
+%===========Build a Surrogate Model for Fitting==============================
+
+
+%=======Polynomial Surrogate=====
+
+%Second order Polynomial in 3 variables
+% y^​=a0​+a1​x1​+a2​x2​+a3​x3​+a4​x12​+a5​x22​+a6​x32​+a7​x1​x2​+a8​x1​x3​+a9​x2​x3
+% 
+% 10 basis functions [1,x1​,x2​,x3​,x12​,x22​,x32​,x1​x2​,x1​x3​,x2​x3​]​
+
+x1 = samples(:,1);
+x2 = samples(:,2);
+x3 = samples(:,3);
+
+Phi = [ ...                        %
+    ones(size(samples,1),1), ...   % 1
+    x1, x2, x3, ...                % linear terms
+    x1.^2, x2.^2, x3.^2, ...       % quadratic terms
+    x1.*x2, x1.*x3, x2.*x3];       % interaction terms
+
+
+%=======RBF Surrogate=====
