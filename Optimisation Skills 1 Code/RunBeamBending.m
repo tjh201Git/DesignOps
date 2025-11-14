@@ -1,7 +1,7 @@
 clc, clear all, close all
 
 N = 100; %the beam solver discretises beam into 100 nodes
-t = 1e-3*ones(1,N); %set the skin thickess of the blade at every node
+t = 2e-3*ones(1,N); %set the skin thickess of the blade at every node
 c = 0.15; %define the chord length - KEEP FIXED
 
 I = secondMomentArea(t,c); %caclulate the second moment of area
