@@ -1,7 +1,9 @@
-function funs = makeEngFuncs
-    funs.findVolumeSkinMethod = @findVolumeSkinMethod;
-    funs.findSecondMomentAreaSkinMethod = @findSecondMomentAreaSkinMethod;
-    funs.bendingStress = @bendingStress;
+function funcs = makeEngFuncs
+    funcs.findVolumeSkinMethod = @findVolumeSkinMethod;
+    funcs.findSecondMomentAreaSkinMethod = @findSecondMomentAreaSkinMethod;
+    funcs.bendingStress = @bendingStress;
+    funcs.secondMomentAreaArraySkinThicknessGradient = @secondMomentAreaArraySkinThicknessGradient;
+    funcs.findAerofoilPositiveHeight = @findAerofoilPositiveHeight;
 end
 % Plot the aerofoil profile
 % clc, clear all, close all
@@ -29,9 +31,12 @@ end
 
 
 % for NACA0012
-function yt = findAerofoilPositiveHeight(x, chord, thickness)
+function yt = findAerofoilPositiveHeight(x)
 
     % note that our aerofoil is symmetrical about the x axis
+
+    chord = 0.15;
+    thickness_ratio = 0.12;
 
     comp = 0.2969 * sqrt(x / chord);
     comp = comp - 0.1260 * (x / chord);
@@ -39,47 +44,38 @@ function yt = findAerofoilPositiveHeight(x, chord, thickness)
     comp = comp + 0.2843 * (x / chord).^3;
     comp = comp - 0.1015 * (x / chord).^4;
 
-    yt = chord * 5 * thickness * comp;
+    yt = chord * 5 * thickness_ratio * comp;
    
 end
 
-function spurHeight = findAerofoilHeight(x, chord, thickness)
+function spurHeight = findAerofoilHeight(x)
 
-    spurHeight = findAerofoilPositiveHeight(x, chord, thickness) * 2;
+    spurHeight = findAerofoilPositiveHeight(x) * 2;
 
 end
 
-function area = findCrossSectionalArea(chord, thickness)
-
-
-    area = integral(@parameterisedFindAeroHeight,0,chord);
-    
-    % Use a nested function so we can use the matlab integral function with
-    % our custom variables (chord and thickness)
-    function height = parameterisedFindAeroHeight(x)
-        height = 2 * findAerofoilHeight(x, chord, thickness);
-    end
-
+function area = findSolidCrossSectionalArea(chord)
+    area = integral(@findAerofoilHeight,0,chord);
 end
 
 function bending_stress = bendingStress(moment, dist_from_netural_axis, second_moment_area)
     bending_stress = moment * dist_from_netural_axis ./ second_moment_area;
 end
 
-function differential = findAerofoilHeightDifferential(x, chord, thickness)
+function differential = findAerofoilHeightDifferential(x)
     
+
+chord = 0.15;
+thickness_ratio = 0.12;
+
 comp = 0.2969 ./ (sqrt(chord) * 2 * sqrt(x));
 comp = comp - 0.1260 / chord;
 comp = comp - 0.3516 * 2 * x / chord^2;
 comp = comp + 0.2843 * 3 * x.^2 / chord^3;
 comp = comp - 0.1015*4*x.^3 / chord^4;
 
-differential = 5 * chord * thickness * comp;
+differential = 5 * chord * thickness_ratio * comp;
 end
-
-
-
-% area = findCrossSectionalArea(0.15, 1e-3)
 
 
 
@@ -89,7 +85,7 @@ function area = approxCrossSectAreaSkinMethod(skin_thickness, chord)
     area = skin_thickness * integral(@integralPart, 0, chord) * 2;
     
     function out = integralPart(x)
-        differential = findAerofoilHeightDifferential(x, chord, skin_thickness);
+        differential = findAerofoilHeightDifferential(x);
         out = sqrt(1+differential.^2);
     end
 
@@ -114,6 +110,11 @@ function V = findVolumeSkinMethod(chord, thickness)
 end
 
 
+function secondMomentAreaArray = secondMomentAreaArraySimpleSkin(N, chord, thickness)
+    secondMomentAreaArray = findSecondMomentAreaSkinMethod(chord, thickness) * ones(N);
+end
+
+
 % assumes single thickness per cross section
 function I = findSecondMomentAreaSkinMethod(chord, thickness)
     
@@ -124,8 +125,8 @@ function I = findSecondMomentAreaSkinMethod(chord, thickness)
     I = 0;
     for i = 0:(numPanels-1)
         x = (panelLength / 2) + (i * panelLength);
-        height = findAerofoilPositiveHeight(x, chord, thickness);
-        differential = findAerofoilHeightDifferential(x, chord, thickness);
+        height = findAerofoilPositiveHeight(x);
+        differential = findAerofoilHeightDifferential(x);
         angle = atan(differential);
         I = I + secondMomentAreaPerSkinPanel(panelLength, thickness, angle, height);
 
@@ -149,3 +150,31 @@ function Ix = secondMomentAreaPerSkinPanel(L, t, angle, d)
 end
 
 
+function thickness = getThicknessAtDistanceFromLinearLine(distance, startThickness, gradient)
+    tempThickness = startThickness + gradient * distance;
+    positiveThickness = max(0,tempThickness);
+    thickness = min(positiveThickness, startThickness);
+end
+
+function volume = findVolumeSkinThicknessGradient(chord, startThickness, gradient)
+    
+    volume = integral(@getAreaAtDistance, 0, chord);
+
+    function area = getAreaAtDistance(x)
+        thickness = getThicknessAtDistanceFromLinearLine(x, startThickness, gradient);
+        area = approxCrossSectAreaSkinMethod(thickness, chord);
+    end
+end
+
+function secondMomentAreaArray = secondMomentAreaArraySkinThicknessGradient(N, chord, startThickness, gradient)
+    
+    chunkDist = chord / N;
+    % secondMomentAreaArray = zeros(N);
+
+    for i = 1:N
+        zpos = chunkDist * (i - 1);
+        thickness = getThicknessAtDistanceFromLinearLine(zpos, startThickness, gradient);
+        secondMomentAreaArray(i) = findSecondMomentAreaSkinMethod(chord, thickness);
+    end
+    
+end
