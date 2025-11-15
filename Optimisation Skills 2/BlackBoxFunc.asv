@@ -61,16 +61,14 @@ MCSI_samples = exampFunc(samples);
 
 %=================Plotting==========================
 
-%sliceSkew = 0.5; %Not sure yet but skew which adds the z value of the graph
-%sliceSkew * ones(numel(x),1)
-
+sliceSkew = 0.5; %Not sure yet but skew which adds the z value of the graph
 % which is same length as x and y
 %important because "MATLAB fsurf only plots 2 variables, 
 %but my function needs 3, so I must create a constant third vector 
 %using ones(numel(x),1), multiply by fixedSkew,
 %and that gives the 3rd input column."
 
-fsurf(@(x, y) reshape(exampFunc([x(:), y(:)]), size(x)), ...
+fsurf(@(x, y) reshape(exampFunc([x(:), y(:),sliceSkew * ones(numel(x),1)]), size(x)), ...
     'MeshDensity', 100, ...
     'ShowContours', 'on', ...
     'LineStyle', ':'); %reshaped and add audience skew because fsurf can only plot for 2 variables
@@ -93,19 +91,9 @@ hold off;
 %=======Polynomial Surrogate=====
 
 %Second order Polynomial in 3 variables
-% y^​=a0​+a1​x1​+a2​x2​+a3​x3​+a4​x12​+a5​x22​+a6​x32​+a7​x1​x2​+a8​x1​x3​+a9​x2​x3
-% 
-% 10 basis functions [1,x1​,x2​,x3​,x12​,x22​,x32​,x1​x2​,x1​x3​,x2​x3​]​
+%
 
 x1 = samples(:,1);
 x2 = samples(:,2);
 x3 = samples(:,3);
 
-Phi = [ ...                        %
-    ones(size(samples,1),1), ...   % 1
-    x1, x2, x3, ...                % linear terms
-    x1.^2, x2.^2, x3.^2, ...       % quadratic terms
-    x1.*x2, x1.*x3, x2.*x3];       % interaction terms
-
-
-%=======RBF Surrogate=====
