@@ -22,8 +22,8 @@ N = 100;
 targetStress = 30e6; % Pa (30 MPa)
 
 startThickness = 0.05;
-% gradient = -0.3;
-gradient = -0.25;
+gradient = -0.3;
+% gradient = -0.25;
 
 I_array = engFuncs.secondMomentAreaArraySkinThicknessGradient(N, chord, startThickness, gradient);
 

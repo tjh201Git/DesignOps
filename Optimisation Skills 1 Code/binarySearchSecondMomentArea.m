@@ -6,6 +6,7 @@ engFuncs = makeEngFuncs;
 youngs_modulus = 2e9;
 yield_strength = 30e6; %MPa
 chord = 0.15;
+radius = 1.5;
 dist_from_neutral_axis = 0.12*chord;
 
 I_low = 1e-10;
@@ -17,12 +18,15 @@ N = 100;
 history = findOptimalThicknessBinary(I_low, I_high, chord, N, yield_strength, I_tol, engFuncs);
 history.stresses = history.stresses ./ 1e6;
 
+bestSecondMomentAreas = history.secondMomentAreas(end,:);
+save('bestSecondMomentAreas.mat','bestSecondMomentAreas');
+
 
 fig = figure;
 theme(fig, "light");
 
 % x-axis = spanwise or chordwise locations
-lin = linspace(0, chord, N);
+lin = linspace(0, radius, N);
 
 subplot(2,1,1);
 hold on
