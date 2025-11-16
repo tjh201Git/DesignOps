@@ -6,15 +6,16 @@ engFuncs = makeEngFuncs;
 youngs_modulus = 2e9;
 yield_strength = 30e6;
 
-N = 100;
-chord = 0.15;
-dist_from_neutral_axis = 0.12*chord;
-thickness = 0.03;
+% N = 100;
+% chord = 0.15;
+% thickness = 0.03;
 
 
 
 % --- Parameters
 chord = 0.15;
+dist_from_neutral_axis = 0.12*chord;
+
 N = 100;
 targetStress = 30e6; % Pa (30 MPa)
 
@@ -115,7 +116,7 @@ function [maxStress, volume] = evaluateThickness(t, chord, engFuncs, N)
     volume = engFuncs.findVolumeSkinMethod(chord, t);
 
     % Compute second moment of area
-    I = engFuncs.findSecondMomentAreaSkinMethod(chord, t);
+    I = engFuncs.findSecondMomentAreaSkinMethod(chord, t)
     I_array = I * ones(N, 1);
 
     % Run beam bending solver
