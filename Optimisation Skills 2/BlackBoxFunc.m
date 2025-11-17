@@ -136,8 +136,8 @@ maxSkew = 1;
 %ChosenFunc = @exampFunc;  
 %ChosenFunc = @rastrigin;
 %ChosenFunc = @ackley3;
-ChosenFunc = @sphere3;
-%ChosenFunc = @griewank3;
+%ChosenFunc = @sphere3;
+ChosenFunc = @griewank3;
 
 
 Nodes  = 30;
@@ -263,7 +263,7 @@ x2 = X_norm(:,2);
 x3 = X_norm(:,3);
 
 Phi = [ ... % Phi = [1, x1, x2, x3, x1^2, x2^2, x3^2, x1*x2, x1*x3, x2*x3]
-    ones(Nodes,1), ...   
+    ones(Nodes,1), ...      
     x1, x2, x3, ...               
     x1.^2, x2.^2, x3.^2, ...       
     x1.*x2, x1.*x3, x2.*x3];       
@@ -288,7 +288,7 @@ x1qn = Xq_norm(:,1);
 x2qn = Xq_norm(:,2);
 x3qn = Xq_norm(:,3);
 
-Phi_q = [ ...        %Constrauct the same Phi matrix for the query points
+Phi_q = [ ...        %Construct the same Phi matrix for the query points
     ones(size(Xq,1),1), ...
     x1qn, x2qn, x3qn, ...
     x1qn.^2, x2qn.^2, x3qn.^2, ...
@@ -296,6 +296,11 @@ Phi_q = [ ...        %Constrauct the same Phi matrix for the query points
 
 %Evaluate the surrogate model at each query pont 
 yhat = Phi_q * A;                     % nq^2 x 1
+
+%========Decide on the Polynomial Order==============================
+
+
+
 
 
 %========Leave One Out Cross Validation and Quality of Fit===============================
@@ -332,7 +337,7 @@ maxM = max(MCSI_samples);
 rangeM = maxM - minM;
 stdM   = std(MCSI_samples);
 
-errorPercent = (RMSE_LOO/rangeM)*100 %the error expressed as a range of the MCSI values
+errorPercent = (RMSE_LOO/rangeM)*100; %the error expressed as a range of the MCSI values
 
 fprintf('First Surrogate LOOCV Error = %.4f (%.2f%% of MCSI range)\n', RMSE_LOO, errorPercent);
 
@@ -366,11 +371,11 @@ origMax = [maxAdvert, maxTarget, maxSkew];
 % unconstrained), GA ensures that all candidate points remain inside the
 % original design space
 
-f_sur = @(x) ... 
-    [1, ...
-     ((x(1)-Xmin(1))/(Xmax(1)-Xmin(1))), ...
-     ((x(2)-Xmin(2))/(Xmax(2)-Xmin(2))), ...
-     ((x(3)-Xmin(3))/(Xmax(3)-Xmin(3))), ...
+f_sur = @(x) ...  %Builds  callable version of the polynomial surrogate to
+    [1, ...       %to be put into the Genetic Algorithm function. It takes
+     ((x(1)-Xmin(1))/(Xmax(1)-Xmin(1))), ...%any point in the space and 
+     ((x(2)-Xmin(2))/(Xmax(2)-Xmin(2))), ...%normalises it to 0-1 and 
+     ((x(3)-Xmin(3))/(Xmax(3)-Xmin(3))), ... %reconstructs [1, x1, x2, x3, x1^2, x2^2, x3^2, x1*x2, x1*x3, x2*x3]
      ((x(1)-Xmin(1))/(Xmax(1)-Xmin(1)))^2, ...
      ((x(2)-Xmin(2))/(Xmax(2)-Xmin(2)))^2, ...
      ((x(3)-Xmin(3))/(Xmax(3)-Xmin(3)))^2, ...
@@ -546,7 +551,7 @@ maxM = max(MCSI_samples_new);
 rangeM = maxM - minM;
 stdM   = std(MCSI_samples_new);
 
-errorPercent_new = (RMSE_LOO_new/rangeM)*100 %the error expressed as a range of the MCSI values
+errorPercent_new = (RMSE_LOO_new/rangeM)*100; %the error expressed as a range of the MCSI values
 
 fprintf('LOOCV Error For Refined Surrogate = %.4f (%.2f%% of MCSI range)\n', RMSE_LOO_new, errorPercent_new);
 
@@ -686,8 +691,7 @@ rangeM3 = maxM3 - minM3;
 
 errorPercent_third = (RMSE_LOO_third / rangeM3)*100;
 
-fprintf('LOOCV Error For THIRD Refined Surrogate = %.4f (%.2f%% of MCSI range)\n', ...
-        RMSE_LOO_third, errorPercent_third);
+fprintf('LOOCV Error For THIRD Refined Surrogate = %.4f (%.2f%% of MCSI range)\n', RMSE_LOO_third, errorPercent_third);
 
 %Genetic Algorithim for the Third Surrogate
 f_sur_third = @(x) ...
@@ -709,8 +713,7 @@ f_sur_third = @(x) ...
 %trueAtGA_third = ChosenFunc(xGA_third);
 %fprintf('  True MCSI at that point = %.4f\n', trueAtGA_third);
 
-fprintf('3rd Surrogate GA min at [%.3f, %.3f, %.3f]\n', ...
-        xGA_third(1), xGA_third(2), xGA_third(3));
+fprintf('3rd Surrogate GA min at [%.3f, %.3f, %.3f]\n', xGA_third(1), xGA_third(2), xGA_third(3));
 fprintf('  Surrogate MCSI (3rd) = %.4f\n', fGA_third);
 
 %==============Plotting final surrogate with refined window======================
@@ -1100,8 +1103,6 @@ xRBF_opt3 = min(xRBF_opt3, origMax);
 
 fprintf('Second Refined RBF surrogate GA min at [%.3f, %.3f, %.3f], surrogate = %.4f\n', xRBF_opt3(1), xRBF_opt3(2), xRBF_opt3(3), fRBF_opt3);
 
-
-
 figure('Name','Third RBF Surrogate (Second Refinement)','NumberTitle','off');
 scatter3(Xq_RBF_third(:,1), Xq_RBF_third(:,2), Xq_RBF_third(:,3), 25, yhat_RBF_third, 'filled');
 hold on;
@@ -1215,3 +1216,5 @@ hold off;
 
 fprintf('GA Function True min at [%.3f, %.3f, %.3f]\n', xTrue(1), xTrue(2), xTrue(3));
 fprintf('  True MCSI  = %.4f\n', fTrue);
+
+

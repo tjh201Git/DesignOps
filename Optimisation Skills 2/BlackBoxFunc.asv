@@ -64,7 +64,7 @@
 %   - Same way as before
 %
 % 14) Using Genetic Algorithms Find the Minima of the Second Third
-%   - Same way as before
+%   - Same way as before and this is the final found minima
 %
 %=================RBF Fitting==========================
 % 15) Constructing the First Surrogate Model Using RBF Fitting
@@ -104,27 +104,24 @@
 %
 % 23) Refine the Design Space by a Factor of 0.3 at the Minima of the
 % Second Surrogate
-%   -%   - Builds a refinement window by 0.5 zoom
-
+%   -Builds a refinement window by 0.3 zoom at the second surrogates minima
 %
 % 24) Construct a Third Sample Set Within the New Sample Space
-%   -
+%   - Same way as before, using the Star Discrepency method it generates a 
+%     well spaced set of 5 sample points within the re-refined window
 %
 % 25) Construct a Third Surrogate Model Using RBF Fitting by
 % Combining the Three Sample Sets
-%   -
+%   - Same way as before, Adds the three sample sets together and rebuilds 
+%     the surrogate. Creates a well defined cluster of points within
+%     predicted surrogate minima
 %
 % 26) Assess the quality of fit for the Third Surrogate using Leave One Out Cross
 % Validation
-%   -
+%   - Same way as before
 %
 % 27) Using Genetic Algorithms Find the Minima of the Second Third
-%   -
-
-
-
-
-
+%   - Same way as before, and this is the final found minima
 
 
 %======================INITIALIZATION==============================================
@@ -291,7 +288,7 @@ x1qn = Xq_norm(:,1);
 x2qn = Xq_norm(:,2);
 x3qn = Xq_norm(:,3);
 
-Phi_q = [ ...        %Constrauct the same Phi matrix for the query points
+Phi_q = [ ...        %Construct the same Phi matrix for the query points
     ones(size(Xq,1),1), ...
     x1qn, x2qn, x3qn, ...
     x1qn.^2, x2qn.^2, x3qn.^2, ...
@@ -369,9 +366,9 @@ origMax = [maxAdvert, maxTarget, maxSkew];
 % unconstrained), GA ensures that all candidate points remain inside the
 % original design space
 
-f_sur = @(x) ... 
-    [1, ...
-     ((x(1)-Xmin(1))/(Xmax(1)-Xmin(1))), ...
+f_sur = @(x) ...  %Builds  callable version of the polynomial surrogate to
+    [1, ...       %to be put into the Genetic Algorithm function. It takes
+     ((x(1)-Xmin(1))/(Xmax(1)-Xmin(1))), ...%any poi
      ((x(2)-Xmin(2))/(Xmax(2)-Xmin(2))), ...
      ((x(3)-Xmin(3))/(Xmax(3)-Xmin(3))), ...
      ((x(1)-Xmin(1))/(Xmax(1)-Xmin(1)))^2, ...
