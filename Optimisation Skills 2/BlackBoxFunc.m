@@ -134,11 +134,11 @@ minSkew = 0;
 maxSkew = 1;
 
 %ChosenFunc = @exampFunc;  
-%ChosenFunc = @rastrigin;
+ChosenFunc = @rastrigin;
 %ChosenFunc = @ackley3;
 %ChosenFunc = @sphere3;
 %ChosenFunc = @griewank3;
-ChosenFunc = @manualBlackbox;
+%ChosenFunc = @manualBlackbox;
 
 Nodes  = 30;
 
@@ -149,8 +149,8 @@ RBFsurrogateNodes = 5;
 RBFthirdSurrogateNodes = 5;
 
 optsGA = optimoptions('ga', ...  
-    'MaxGenerations', 100, ... 
-    'PopulationSize', 1000);   
+    'MaxGenerations', 1000, ... 
+    'PopulationSize', 10000);   
 
 %===========Star Discrepency Sampling Method===================
 
@@ -161,7 +161,7 @@ Dimensions  = 3;
 % set of points that is the most evenly space, which is the lowest 
 % discrepency, to use as our initial sampling design.
 
-numSets = 2000; %Try 2000 different designs
+numSets = 10000; %Try 2000 different designs
 bestSD  = inf; %Start with infinity then replace with smaller and smaller discrepency values
 bestXn  = []; %placeholder for best design
 
@@ -423,7 +423,7 @@ refMax = min(refMax, origMax);
 
 N_infill    = PolysurrogateNodes;      % number of new points to add
 Dimensions  = 3;       
-numSets_inf = 2000;     
+numSets_inf = 10000;     
 
 bestSD_inf  = inf;
 bestXn_inf  = [];
@@ -628,7 +628,7 @@ refMin3 = max(refMin3, origMin);
 refMax3 = min(refMax3, origMax);
 
 N_infill3    = PolythirdSurrogateNodes;    % number of new points to add (3rd refinement)
-numSets_inf3 = 2000;
+numSets_inf3 = 10000;
 
 bestSD_inf3  = inf;
 bestXn_inf3  = [];
@@ -787,10 +787,24 @@ f_sur_third = @(x) ...
 fprintf('3rd Surrogate GA min at [%.3f, %.3f, %.3f]\n', xGA_third(1), xGA_third(2), xGA_third(3));
 fprintf('  Surrogate MCSI (3rd) = %.4f\n', fGA_third);
 
+polyMinima = [xGA_third(1); xGA_third(2); xGA_third(3)];
+
 %==============Plotting final surrogate with refined window======================
 %figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'off');
 nexttile;
 scatter3(Xq_third(:,1), Xq_third(:,2), Xq_third(:,3), 25, yhat_third, 'filled');
+hold on;
+plot3(polyMinima(1), polyMinima(2), polyMinima(3), ...
+      'rp', 'MarkerSize', 18, 'MarkerFaceColor', 'y', 'DisplayName','Poly Minima');
+
+minLabel = sprintf('Minima:(%.2f, %.2f, %.2f), Polynomial Order: %.2f, LOOV Percentage Error: %.2f%%', ...
+                   polyMinima(1), polyMinima(2), polyMinima(3),BestOrder,errorPercent_third);
+
+text(polyMinima(1), polyMinima(2), polyMinima(3), ...
+     minLabel, ...
+     'HorizontalAlignment','left', ...
+     'VerticalAlignment','bottom', ...
+     'FontWeight','bold');
 hold on;
 
 %====================Draw refinement window=====================
@@ -989,7 +1003,7 @@ refMaxRBF = min(refMaxRBF, origMax);
 
 N_infill_RBF    = RBFsurrogateNodes;  % 5 new nodes inside the refined space
 Dimensions      = 3;
-numSets_inf_RBF = 2000;
+numSets_inf_RBF = 10000;
 
 bestSD_inf_RBF  = inf; %Dstar!
 bestXn_inf_RBF  = [];
@@ -1074,7 +1088,7 @@ refMaxRBF2 = min(refMaxRBF2, origMax);
 
 N_infill_RBF2    = RBFthirdSurrogateNodes;   % 5 new nodes
 Dimensions       = 3;
-numSets_inf_RBF2 = 2000;
+numSets_inf_RBF2 = 10000;
 
 bestSD_inf_RBF2  = inf;
 bestXn_inf_RBF2  = [];
@@ -1155,9 +1169,9 @@ minM3 = min(MCSI_samples_RBF_third);
 maxM3 = max(MCSI_samples_RBF_third);
 rangeM3 = maxM3 - minM3;
 
-errorPercent_third = (RMSE_LOO_third / rangeM3)*100;
+errorPercentrbf_third = (RMSE_LOO_third / rangeM3)*100;
 
-fprintf('LOOCV Error For THIRD RBF Refined Surrogate = %.4f (%.2f%% of MCSI range)\n',RMSE_LOO_third, errorPercent_third);
+fprintf('LOOCV Error For THIRD RBF Refined Surrogate = %.4f (%.2f%% of MCSI range)\n',RMSE_LOO_third, errorPercentrbf_third);
 
 
 %================Find the Minima based on GA and FUll surrogate=================================
@@ -1173,9 +1187,25 @@ xRBF_opt3 = min(xRBF_opt3, origMax);
 
 fprintf('Second Refined RBF surrogate GA min at [%.3f, %.3f, %.3f], surrogate = %.4f\n', xRBF_opt3(1), xRBF_opt3(2), xRBF_opt3(3), fRBF_opt3);
 
+rbfMinima = [xRBF_opt3(1); xRBF_opt3(2); xRBF_opt3(3)];
+
 %figure('Name','Third RBF Surrogate (Second Refinement)','NumberTitle','off');
 nexttile;
 scatter3(Xq_RBF_third(:,1), Xq_RBF_third(:,2), Xq_RBF_third(:,3), 25, yhat_RBF_third, 'filled');
+hold on;
+plot3(rbfMinima(1), rbfMinima(2), rbfMinima(3), ...
+      'rp', 'MarkerSize', 18, 'MarkerFaceColor', 'y', 'DisplayName','Poly Minima');
+
+minLabel = sprintf('Minima:(%.2f, %.2f, %.2f), LOOV Percentage Error: %.2f%%', ...
+                   rbfMinima(1), rbfMinima(2), rbfMinima(3),errorPercentrbf_third);
+
+text(rbfMinima(1), rbfMinima(2), rbfMinima(3), ...
+     minLabel, ...
+     'HorizontalAlignment','left', ...
+     'VerticalAlignment','bottom', ...
+     'FontWeight','bold');
+
+
 hold on;
 
 %====================Draw refinement window=====================
