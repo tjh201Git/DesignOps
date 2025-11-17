@@ -1,4 +1,4 @@
-%MATLAB BLACKBOX OPTIMIZER
+ %MATLAB BLACKBOX OPTIMIZER
 %=============================================================
 %   Program Steps - Written by Thomas Hodges - tjh201
 %
@@ -209,7 +209,7 @@ X_Blackbox = [ ... %%
     rand(Nblackbox,1)*(maxTarget-minTarget) + minTarget, ...  % x2: target
     rand(Nblackbox,1)*(maxSkew-minSkew)     + minSkew   ];    % x3: skew
 
-MCSI_true = ChosenFunc(X_Blackbox);
+MCSI_true = ChosenFunc(X_Blackbox)
 
 figure('Name', 'Plot of the Example BlackBox', 'NumberTitle', 'off');
 scatter3(X_Blackbox(:,1), X_Blackbox(:,2), X_Blackbox(:,3), 25, MCSI_true, 'filled');
