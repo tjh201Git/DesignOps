@@ -137,8 +137,8 @@ maxSkew = 1;
 %ChosenFunc = @rastrigin;
 %ChosenFunc = @ackley3;
 %ChosenFunc = @sphere3;
-ChosenFunc = @griewank3;
-
+%ChosenFunc = @griewank3;
+ChosenFunc = @manualBlackbox;
 
 Nodes  = 30;
 
@@ -188,45 +188,44 @@ fprintf('Best star discrepancy (normalised space) = %.4f\n', bestSD);
 %   audienceSkew → [0, 1]
 % This produces the 20×3 matrix containing evenly spaced sample points
 
+%Converting the points from normalized value back into real value
 samples = zeros(Nodes,Dimensions); %hold samples
 samples(:,1) = minAdvert + bestXn(:,1) * (maxAdvert - minAdvert); %scale
 samples(:,2) = minTarget + bestXn(:,2) * (maxTarget - minTarget); %scale
 samples(:,3) = minSkew   + bestXn(:,3) * (maxSkew   - minSkew);  %scale
 
-MCSI_samples = ChosenFunc(samples); 
+MCSI_samples = ChosenFunc(samples,'initialize'); 
 
 %=================Plotting==========================
-
-
 %Now plotting the example blackbox function with the 3 variable ranges so
 %that we can compare agaisnt the surrogate model 
 %its being plotted as a point cloud because its a 4 dimensional plot
 
-Nblackbox = 2000; %Resolution for blackbox plotting
-
-X_Blackbox = [ ... %%
-    rand(Nblackbox,1)*(maxAdvert-minAdvert) + minAdvert, ...  % x1: advert
-    rand(Nblackbox,1)*(maxTarget-minTarget) + minTarget, ...  % x2: target
-    rand(Nblackbox,1)*(maxSkew-minSkew)     + minSkew   ];    % x3: skew
-
-MCSI_true = ChosenFunc(X_Blackbox)
-
-figure('Name', 'Plot of the Example BlackBox', 'NumberTitle', 'off');
-scatter3(X_Blackbox(:,1), X_Blackbox(:,2), X_Blackbox(:,3), 25, MCSI_true, 'filled');
-hold on;
-
-
-xlabel('Advert Spending');
-ylabel('Target Spending');
-zlabel('Audience Skew');
-title('4D Plot of the example function');
-colorbar;
-grid on;
-view(45, 25);
-
-%scatter3(samples(:,1),samples(:,2), MCSI_samples, 50, MCSI_samples,'red', 'filled');
-
-hold off;
+% Nblackbox = 2000; %Resolution for blackbox plotting
+% 
+% X_Blackbox = [ ... %%
+%     rand(Nblackbox,1)*(maxAdvert-minAdvert) + minAdvert, ...  % x1: advert
+%     rand(Nblackbox,1)*(maxTarget-minTarget) + minTarget, ...  % x2: target
+%     rand(Nblackbox,1)*(maxSkew-minSkew)     + minSkew   ];    % x3: skew
+% 
+% MCSI_true = ChosenFunc(X_Blackbox)
+% 
+% figure('Name', 'Plot of the Example BlackBox', 'NumberTitle', 'off');
+% scatter3(X_Blackbox(:,1), X_Blackbox(:,2), X_Blackbox(:,3), 25, MCSI_true, 'filled');
+% hold on;
+% 
+% 
+% xlabel('Advert Spending');
+% ylabel('Target Spending');
+% zlabel('Audience Skew');
+% title('4D Plot of the example function');
+% colorbar;
+% grid on;
+% view(45, 25);
+% 
+% %scatter3(samples(:,1),samples(:,2), MCSI_samples, 50, MCSI_samples,'red', 'filled');
+% 
+% hold off;
 
 
 %===========Build a Surrogate Model for Fitting==============================
@@ -443,7 +442,7 @@ samplesInsideWindow(:,2) = refMin(2) + bestXn_inf(:,2) * (refMax(2) - refMin(2))
 samplesInsideWindow(:,3) = refMin(3) + bestXn_inf(:,3) * (refMax(3) - refMin(3));  % skew
 
 % stick the samples into the blackbox
-MCSI_infill = ChosenFunc(samplesInsideWindow);
+MCSI_infill = ChosenFunc(samplesInsideWindow,'poly');
 
 samples_new = [samples;samplesInsideWindow]; %Adding new samples to the old
 MCSI_samples_new = [MCSI_samples; MCSI_infill]; %Adding new samples to the old
@@ -645,7 +644,7 @@ samplesInsideWindow3(:,1) = refMin3(1) + bestXn_inf3(:,1) * (refMax3(1) - refMin
 samplesInsideWindow3(:,2) = refMin3(2) + bestXn_inf3(:,2) * (refMax3(2) - refMin3(2));  % target
 samplesInsideWindow3(:,3) = refMin3(3) + bestXn_inf3(:,3) * (refMax3(3) - refMin3(3));  % skew
 
-MCSI_infill3 = ChosenFunc(samplesInsideWindow3);% Evaluate black-box on the 3rd refinement points
+MCSI_infill3 = ChosenFunc(samplesInsideWindow3,'poly2');% Evaluate black-box on the 3rd refinement points
 
 % add all data: original + 2nd refinement + 3rd refinement
 samples_third      = [samples_new; samplesInsideWindow3]; 
@@ -1003,7 +1002,7 @@ samplesInsideWindow_RBF(:,1) = refMinRBF(1) + bestXn_inf_RBF(:,1) * (refMaxRBF(1
 samplesInsideWindow_RBF(:,2) = refMinRBF(2) + bestXn_inf_RBF(:,2) * (refMaxRBF(2) - refMinRBF(2));
 samplesInsideWindow_RBF(:,3) = refMinRBF(3) + bestXn_inf_RBF(:,3) * (refMaxRBF(3) - refMinRBF(3));
 
-MCSI_infill_RBF = ChosenFunc(samplesInsideWindow_RBF); %Evaluate the values of new smples
+MCSI_infill_RBF = ChosenFunc(samplesInsideWindow_RBF,'rbf'); %Evaluate the values of new smples
 
 samples_RBF_new      = [samples; samplesInsideWindow_RBF]; %Add old values with the new
 MCSI_samples_RBF_new = [MCSI_samples; MCSI_infill_RBF];
@@ -1087,7 +1086,7 @@ samplesInsideWindow_RBF2(:,1) = refMinRBF2(1) + bestXn_inf_RBF2(:,1) * (refMaxRB
 samplesInsideWindow_RBF2(:,2) = refMinRBF2(2) + bestXn_inf_RBF2(:,2) * (refMaxRBF2(2) - refMinRBF2(2));
 samplesInsideWindow_RBF2(:,3) = refMinRBF2(3) + bestXn_inf_RBF2(:,3) * (refMaxRBF2(3) - refMinRBF2(3));
 
-MCSI_infill_RBF2 = ChosenFunc(samplesInsideWindow_RBF2);
+MCSI_infill_RBF2 = ChosenFunc(samplesInsideWindow_RBF2,'rbf2');
 
 % Build THIRD RBF surrogate on All combined data 
 samples_RBF_third      = [samples_RBF_new; samplesInsideWindow_RBF2];
@@ -1276,9 +1275,9 @@ legend('Location','best');
 hold off;
 
 %FInd the True Minima for the example functions
-[xTrue, fTrue] = ga(@(x) ChosenFunc(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
-
-fprintf('GA Function True min at [%.3f, %.3f, %.3f]\n', xTrue(1), xTrue(2), xTrue(3));
-fprintf('  True MCSI  = %.4f\n', fTrue);
+% [xTrue, fTrue] = ga(@(x) ChosenFunc(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
+% 
+% fprintf('GA Function True min at [%.3f, %.3f, %.3f]\n', xTrue(1), xTrue(2), xTrue(3));
+% fprintf('  True MCSI  = %.4f\n', fTrue);
 
 

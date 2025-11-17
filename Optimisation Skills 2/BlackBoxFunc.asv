@@ -1,4 +1,4 @@
-%MATLAB BLACKBOX OPTIMIZER
+ %MATLAB BLACKBOX OPTIMIZER
 %=============================================================
 %   Program Steps - Written by Thomas Hodges - tjh201
 %
@@ -137,8 +137,8 @@ maxSkew = 1;
 %ChosenFunc = @rastrigin;
 %ChosenFunc = @ackley3;
 %ChosenFunc = @sphere3;
-ChosenFunc = @griewank3;
-
+%ChosenFunc = @griewank3;
+ChosenFunc = @manualBlackbox;
 
 Nodes  = 30;
 
@@ -188,12 +188,13 @@ fprintf('Best star discrepancy (normalised space) = %.4f\n', bestSD);
 %   audienceSkew → [0, 1]
 % This produces the 20×3 matrix containing evenly spaced sample points
 
+%Converting the points from normalized value back into real value
 samples = zeros(Nodes,Dimensions); %hold samples
 samples(:,1) = minAdvert + bestXn(:,1) * (maxAdvert - minAdvert); %scale
 samples(:,2) = minTarget + bestXn(:,2) * (maxTarget - minTarget); %scale
 samples(:,3) = minSkew   + bestXn(:,3) * (maxSkew   - minSkew);  %scale
 
-MCSI_samples = ChosenFunc(samples); 
+MCSI_samples = ChosenFunc(samples,0); 
 
 %=================Plotting==========================
 
@@ -209,7 +210,7 @@ X_Blackbox = [ ... %%
     rand(Nblackbox,1)*(maxTarget-minTarget) + minTarget, ...  % x2: target
     rand(Nblackbox,1)*(maxSkew-minSkew)     + minSkew   ];    % x3: skew
 
-MCSI_true = ChosenFunc(X_Blackbox);
+MCSI_true = ChosenFunc(X_Blackbox)
 
 figure('Name', 'Plot of the Example BlackBox', 'NumberTitle', 'off');
 scatter3(X_Blackbox(:,1), X_Blackbox(:,2), X_Blackbox(:,3), 25, MCSI_true, 'filled');
@@ -658,21 +659,19 @@ x1t = X_norm_third(:,1);
 x2t = X_norm_third(:,2);
 x3t = X_norm_third(:,3);
 
-currentNodeCount = PolythirdSurrogateNodes + PolysurrogateNodes + Nodes;
-
-Phi1order = buildPhi(currentNodeCount,1,x1t,x2t,x3t);
-Phi2order = buildPhi(currentNodeCount,2,x1t,x2t,x3t);
-Phi3order = buildPhi(currentNodeCount,3,x1t,x2t,x3t);
-Phi4order = buildPhi(currentNodeCount,4,x1t,x2t,x3t);
-Phi5order = buildPhi(currentNodeCount,5,x1t,x2t,x3t);
+Phi1order = buildPhi(N_third,1,x1t,x2t,x3t);
+Phi2order = buildPhi(N_third,2,x1t,x2t,x3t);
+Phi3order = buildPhi(N_third,3,x1t,x2t,x3t);
+Phi4order = buildPhi(N_third,4,x1t,x2t,x3t);
+Phi5order = buildPhi(N_third,5,x1t,x2t,x3t);
 
 RMSE_orders = zeros(5,1);
 
-RMSE_orders(1) = LOOV(currentNodeCount,Phi1order,MCSI_samples_third); %Root mean squared of the sum of squared errors
-RMSE_orders(2) = LOOV(Nodes,Phi2order,MCSI_samples_third); %Root mean squared of the sum of squared errors
-RMSE_orders(3) = LOOV(Nodes,Phi3order,MCSI_samples_third); %Root mean squared of the sum of squared errors
-RMSE_orders(4) = LOOV(Nodes,Phi4order,MCSI_samples_third); %Root mean squared of the sum of squared errors
-RMSE_orders(5) = LOOV(Nodes,Phi5order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(1) = LOOV(N_third,Phi1order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(2) = LOOV(N_third,Phi2order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(3) = LOOV(N_third,Phi3order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(4) = LOOV(N_third,Phi4order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(5) = LOOV(N_third,Phi5order,MCSI_samples_third); %Root mean squared of the sum of squared errors
 
 rangeM = max(MCSI_samples_third) - min(MCSI_samples_third);
 
