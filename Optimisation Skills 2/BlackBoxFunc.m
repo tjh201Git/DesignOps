@@ -1,11 +1,127 @@
 %MATLAB BLACKBOX OPTIMIZER
 %=============================================================
-%Steps
+%   Program Steps
 %
-% 1) first samples the function using the Star discrepency model
-% 2) Plots the result
-% 3) Chose a cluster to begin Genetic Algorithm sampling
-% 5) repeat until the highest MCSI is found
+% 1) Initialization
+%   -First it sets up the variable bounds, the chosen 'Blackbox' function
+%   to use, node distribution and genetic algorithm generations/population
+%
+% 2) Constructing the first sample set
+%   -Using the Star Discrepency method ir generates a well spaced set of
+%    30 sample points, within the bounds of the function
+%
+%=============POLYNOMIAL FITTING METHOD======================
+%
+% 3) Constructing the First Surrogate Model Using Polynomial Fitting
+%   - Normalises the inputs to [0,1] and builds the polynomial basis matrix
+%     Phi and solves for yhat to get the first surrogate model
+%
+% 3) Assess the quality of fit for the Surrogate using Leave One Out Cross
+% Validation (LOOV)
+%   - Performs LOOCV by refitting the polynomial by the amount of nodes, 
+%     each time leaving one sample out, and computes the percentage error
+%     of how well it predicted the left out sample
+%
+% 4) Using Genetic Algorithms Find the Minima
+%   - Uses GA on the polynomial surrogate to find the surrogate minimum
+%     within the global bounds of the function
+%
+% 5) Refine the Design Space by a Factor of 0.5 at the Minima
+%   - Builds a refinement "window" around the surrogate minimum by 
+%     shrinking the original design space by zoomFactor = 0.5
+%
+% 6) Construct a Second Sample Set Within the New Sample Space
+%   - Using the Star Discrepency method it generates a well spaced set of
+%    5 sample points within the refined window
+%
+% 7) Construct a Second Surrogate Model Using Polynomial Fitting by
+% Combining the Two Sample Sets
+%   - Adds the two sample sets together and rebuilds the surrogate. Adding
+%   the samples creates a more defined minima while still keeping the
+%   global picture of the surrogate
+%
+% 8) Assess the quality of fit for the Second Surrogate using Leave One Out Cross
+% Validation
+%   - Same way as before
+%
+% 9) Using Genetic Algorithms Find the Minima of the Second Surrogate
+%   - Same way as before
+%
+% 10) Refine the Design Space by a Factor of 0.3 at the Minima of the
+% Second Surrogate
+%   - Same way as before but with 0.3 zoom of thr global surrogate
+%
+% 11) Construct a Third Sample Set Within the New Sample Space
+%   - Same way as before with 5 nodes in the re-refined window
+%
+% 12) Construct a Third Surrogate Model Using Polynomial Fitting by
+% Combining the Three Sample Sets
+%   -Adds the three sample sets together and rebuilds the surrogate with a
+%   concentrating of points within the minima of the function
+%
+% 13) Assess the quality of fit for the Third Surrogate using Leave One Out Cross
+% Validation
+%   - Same way as before
+%
+% 14) Using Genetic Algorithms Find the Minima of the Second Third
+%   - Same way as before and this is the final found minima
+%
+%=================RBF Fitting==========================
+% 15) Constructing the First Surrogate Model Using RBF Fitting
+%   - Normalises the inputs, computes the RBF distance matrix phi using the
+%     Gaussian function and solves yhat to obtain the first RBF surrogate 
+%     weights 
+%
+% 16) Assess the quality of fit for the Surrogate using Leave One Out Cross
+% Validation
+%   - Applies LOOCV to the RBF Surrogate model by leaving out each node, 
+%     rebuilding model each time and computes the
+%     percentage error of how well it predicted the left out node
+%
+% 17) Using Genetic Algorithms Find the Minima
+%   - Uses GA on the RBF surrogate to find the 
+%     surrogate minimum within the global bounds of the function
+%
+% 18) Refine the Design Space by a Factor of 0.5 at the Minima
+%   - Builds a refinement window by 0.5 zoom at the surrogates minima
+%
+% 19) Construct a Second Sample Set Within the New Sample Space
+%   - Using the Star Discrepency method it generates a well spaced set of
+%    5 sample points within the refined window
+%
+% 20) Construct a Second Surrogate Model Using RBF Fitting by
+% Combining the Two Sample Sets
+%   - Adds the two sample sets together and rebuilds the surrogate. Adding
+%     the samples creates a more defined minima while still keeping the
+%     global picture of the surrogate
+%
+% 21) Assess the quality of fit for the Second Surrogate using Leave One Out Cross
+% Validation
+%   -Same way as before
+%
+% 22) Using Genetic Algorithms Find the Minima of the Second Surrogate
+%   -Same way as before
+%
+% 23) Refine the Design Space by a Factor of 0.3 at the Minima of the
+% Second Surrogate
+%   -Builds a refinement window by 0.3 zoom at the second surrogates minima
+%
+% 24) Construct a Third Sample Set Within the New Sample Space
+%   - Same way as before, using the Star Discrepency method it generates a 
+%     well spaced set of 5 sample points within the re-refined window
+%
+% 25) Construct a Third Surrogate Model Using RBF Fitting by
+% Combining the Three Sample Sets
+%   - Same way as before, Adds the three sample sets together and rebuilds 
+%     the surrogate. Creates a well defined cluster of points within
+%     predicted surrogate minima
+%
+% 26) Assess the quality of fit for the Third Surrogate using Leave One Out Cross
+% Validation
+%   - Same way as before
+%
+% 27) Using Genetic Algorithms Find the Minima of the Second Third
+%   - Same way as before, and this is the final found minima
 
 
 %======================INITIALIZATION==============================================

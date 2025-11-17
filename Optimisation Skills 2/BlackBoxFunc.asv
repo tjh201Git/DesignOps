@@ -1,12 +1,133 @@
 %MATLAB BLACKBOX OPTIMIZER
 %=============================================================
-%Steps
+%   Program Steps
 %
-% 1) first samples the function using the Star discrepency model
-% 2) Plots the result
-% 3) Chose a cluster to begin Genetic Algorithm sampling
-% 5) repeat until the highest MCSI is found
-%====================================================================
+% 1) Initialization
+%   -First it sets up the variable bounds, the chosen 'Blackbox' function
+%   to use, node distribution and genetic algorithm generations/population
+%
+% 2) Constructing the first sample set
+%   -Using the Star Discrepency method ir generates a well spaced set of
+%    30 sample points, within the bounds of the function
+%
+%=============POLYNOMIAL FITTING METHOD======================
+%
+% 3) Constructing the First Surrogate Model Using Polynomial Fitting
+%   - Normalises the inputs to [0,1] and builds the polynomial basis matrix
+%     Phi and solves for yhat to get the first surrogate model
+%
+% 3) Assess the quality of fit for the Surrogate using Leave One Out Cross
+% Validation (LOOV)
+%   - Performs LOOCV by refitting the polynomial by the amount of nodes, 
+%     each time leaving one sample out, and computes the percentage error
+%     of how well it predicted the left out sample
+%
+% 4) Using Genetic Algorithms Find the Minima
+%   - Uses GA on the polynomial surrogate to find the surrogate minimum
+%     within the global bounds of the function
+%
+% 5) Refine the Design Space by a Factor of 0.5 at the Minima
+%   - Builds a refinement "window" around the surrogate minimum by 
+%     shrinking the original design space by zoomFactor = 0.5
+%
+% 6) Construct a Second Sample Set Within the New Sample Space
+%   - Using the Star Discrepency method it generates a well spaced set of
+%    5 sample points within the refined window
+%
+% 7) Construct a Second Surrogate Model Using Polynomial Fitting by
+% Combining the Two Sample Sets
+%   - Adds the two sample sets together and rebuilds the surrogate. Adding
+%   the samples creates a more defined minima while still keeping the
+%   global picture of the surrogate
+%
+% 8) Assess the quality of fit for the Second Surrogate using Leave One Out Cross
+% Validation
+%   - Same way as before
+%
+% 9) Using Genetic Algorithms Find the Minima of the Second Surrogate
+%   - Same way as before
+%
+% 10) Refine the Design Space by a Factor of 0.3 at the Minima of the
+% Second Surrogate
+%   - Same way as before but with 0.3 zoom of thr global surrogate
+%
+% 11) Construct a Third Sample Set Within the New Sample Space
+%   - Same way as before with 5 nodes in the re-refined window
+%
+% 12) Construct a Third Surrogate Model Using Polynomial Fitting by
+% Combining the Three Sample Sets
+%   -Adds the three sample sets together and rebuilds the surrogate with a
+%   concentrating of points within the minima of the function
+%
+% 13) Assess the quality of fit for the Third Surrogate using Leave One Out Cross
+% Validation
+%   - Same way as before
+%
+% 14) Using Genetic Algorithms Find the Minima of the Second Third
+%   - Same way as before
+%
+%=================RBF Fitting==========================
+% 15) Constructing the First Surrogate Model Using RBF Fitting
+%   - Normalises the inputs, computes the RBF distance matrix phi using the
+%     Gaussian function and solves yhat to obtain the first RBF surrogate 
+%     weights 
+%
+% 16) Assess the quality of fit for the Surrogate using Leave One Out Cross
+% Validation
+%   - Applies LOOCV to the RBF Surrogate model by leaving out each node, 
+%     rebuilding model each time and computes the
+%     percentage error of how well it predicted the left out node
+%
+% 17) Using Genetic Algorithms Find the Minima
+%   - Uses GA on the RBF surrogate to find the 
+%     surrogate minimum within the global bounds of the function
+%
+% 18) Refine the Design Space by a Factor of 0.5 at the Minima
+%   - Builds a refinement window by 0.5 zoom at the surrogates minima
+%
+% 19) Construct a Second Sample Set Within the New Sample Space
+%   - Using the Star Discrepency method it generates a well spaced set of
+%    5 sample points within the refined window
+%
+% 20) Construct a Second Surrogate Model Using RBF Fitting by
+% Combining the Two Sample Sets
+%   - Adds the two sample sets together and rebuilds the surrogate. Adding
+%     the samples creates a more defined minima while still keeping the
+%     global picture of the surrogate
+%
+% 21) Assess the quality of fit for the Second Surrogate using Leave One Out Cross
+% Validation
+%   -Same way as before
+%
+% 22) Using Genetic Algorithms Find the Minima of the Second Surrogate
+%   -Same way as before
+%
+% 23) Refine the Design Space by a Factor of 0.3 at the Minima of the
+% Second Surrogate
+%   -%   - Builds a refinement window by 0.5 zoom
+
+%
+% 24) Construct a Third Sample Set Within the New Sample Space
+%   -
+%
+% 25) Construct a Third Surrogate Model Using RBF Fitting by
+% Combining the Three Sample Sets
+%   -
+%
+% 26) Assess the quality of fit for the Third Surrogate using Leave One Out Cross
+% Validation
+%   -
+%
+% 27) Using Genetic Algorithms Find the Minima of the Second Third
+%   -
+
+
+
+
+
+
+
+%======================INITIALIZATION==============================================
 
 minAdvert = 0;
 maxAdvert = 200;
@@ -16,12 +137,11 @@ minSkew = 0;
 maxSkew = 1;
 
 %ChosenFunc = @exampFunc;  
-ChosenFunc = @rastrigin;
+%ChosenFunc = @rastrigin;
 %ChosenFunc = @ackley3;
-%ChosenFunc = @sphere3;
+ChosenFunc = @sphere3;
 %ChosenFunc = @griewank3;
 
-%===========Star Discrepency Sampling Method===================
 
 Nodes  = 30;
 
@@ -31,6 +151,11 @@ PolythirdSurrogateNodes = 5;
 RBFsurrogateNodes = 5;
 RBFthirdSurrogateNodes = 5;
 
+optsGA = optimoptions('ga', ...  
+    'MaxGenerations', 100, ... 
+    'PopulationSize', 10000);   
+
+%===========Star Discrepency Sampling Method===================
 
 Dimensions  = 3; 
                
@@ -260,10 +385,6 @@ f_sur = @(x) ...
 lowerBound = Xmin;
 upperBound = Xmax;
 
-optsGA = optimoptions('ga', ...  
-    'MaxGenerations', 100, ... 
-    'PopulationSize', 1000);    
-
 [xSur_opt, fSur_opt] = ga(@(x) f_sur(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
 
 xSur_opt = max(xSur_opt, origMin); %Ensure the point isnt outside lower bound
@@ -452,10 +573,6 @@ f_sur_new = @(x) ...
 lowerBound = Xmin;
 upperBound = Xmax;
 
-optsGA = optimoptions('ga', ...
-    'MaxGenerations', 100, ... 
-    'PopulationSize', 1000);    
-
 [xGA, fGA] = ga(@(x) f_sur_new(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
 
 %trueAtGA = ChosenFunc(xGA); 
@@ -599,11 +716,6 @@ fprintf('3rd Surrogate GA min at [%.3f, %.3f, %.3f]\n', ...
         xGA_third(1), xGA_third(2), xGA_third(3));
 fprintf('  Surrogate MCSI (3rd) = %.4f\n', fGA_third);
 
-[xTrue, fTrue] = ga(@(x) ChosenFunc(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
-
-fprintf('GA Function True min at [%.3f, %.3f, %.3f]\n', xTrue(1), xTrue(2), xTrue(3));
-fprintf('  True MCSI  = %.4f\n', fTrue);
-
 %==============Plotting final surrogate with refined window======================
 figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'off');
 
@@ -709,7 +821,7 @@ scatter3(samplesInsideWindow3(:,1), samplesInsideWindow3(:,2), samplesInsideWind
 xlabel('x1 (Advert)');
 ylabel('x2 (Target)');
 zlabel('x3 (Skew)');
-title('Original vs Infill Sample Points (coloured by MCSI)');
+title('POLY Original vs Infill Sample Points (coloured by MCSI)');
 colorbar;
 grid on;
 view(45,25);
@@ -773,7 +885,7 @@ scatter3(samples(:,1), samples(:,2), samples(:,3), ...
 xlabel('x1 (Advert)');
 ylabel('x2 (Target)');
 zlabel('x3 (Skew)');
-title('4D Scatter of RBF Surrogate (colour = predicted MCSI)');
+title('RBF 4D Scatter of RBF Surrogate (colour = predicted MCSI)');
 colorbar;
 grid on;
 view(45,25);
@@ -788,12 +900,7 @@ f_RBF = @(x) ...
               ((x - Xmin) ./ (Xmax - Xmin)) ).^2 , 2) ) / L ).^2 )' ...
     * W_RBF;
 
-optsGA_RBF = optimoptions('ga', ... %Using GA find the surrogate minimum
-    'MaxGenerations', 100, ...
-    'PopulationSize', 1000, ...
-    'Display', 'off');   % turn off GA text if you like
-
-[xRBF_opt, fRBF_opt] = ga(@(x) f_RBF(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA_RBF);
+[xRBF_opt, fRBF_opt] = ga(@(x) f_RBF(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
 
 xRBF_opt = max(xRBF_opt, origMin); %ensure its inside the bounds
 xRBF_opt = min(xRBF_opt, origMax);
@@ -877,12 +984,7 @@ f_RBF_ref = @(x) ...
               ((x - Xmin) ./ (Xmax - Xmin)) ).^2 , 2) ) / L_new ).^2 )' ...
     * W_RBF_new;
 
-optsGA_RBF2 = optimoptions('ga', ... %Running the GA again
-    'MaxGenerations', 100, ...
-    'PopulationSize', 1000, ...
-    'Display', 'off');
-
-[xRBF_opt2, fRBF_opt2] = ga(@(x) f_RBF_ref(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA_RBF2);
+[xRBF_opt2, fRBF_opt2] = ga(@(x) f_RBF_ref(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
 
 xRBF_opt2 = max(xRBF_opt2, origMin);
 xRBF_opt2 = min(xRBF_opt2, origMax);
@@ -960,18 +1062,41 @@ for i = 1:Nq_third
     yhat_RBF_third(i) = psi_i' * W_RBF_third;
 end
 
+%======================Quality of Fit for RBF===================================
+
+%Quality of Fit for the Third Surrogate
+yhatLOO_RBF = zeros(N_RBF_third,1);
+sseLOO_RBF  = 0;
+
+for i = 1:N_RBF_third
+    idx_train = setdiff(1:N_RBF_third, i);
+    Phi_train = Phi_RBF_third(idx_train,:);
+    y_train   = MCSI_samples_RBF_third(idx_train);
+
+    A_i = pinv(Phi_train) * y_train;
+    yhat_i = Phi_RBF_third(i,:) * A_i;
+
+    yhatLOO_RBF(i) = yhat_i;
+    sseLOO_RBF = sseLOO_RBF + (MCSI_samples_RBF_third(i) - yhat_i)^2;
+end
+
+RMSE_LOO_third = sqrt(sseLOO_RBF / N_RBF_third);
+minM3 = min(MCSI_samples_RBF_third);
+maxM3 = max(MCSI_samples_RBF_third);
+rangeM3 = maxM3 - minM3;
+
+errorPercent_third = (RMSE_LOO_third / rangeM3)*100;
+
+fprintf('LOOCV Error For THIRD RBF Refined Surrogate = %.4f (%.2f%% of MCSI range)\n',RMSE_LOO_third, errorPercent_third);
+
+
 %================Find the Minima based on GA and FUll surrogate=================================
 f_RBF_ref2 = @(x) ...
     exp( - ( sqrt( sum( (X_norm_RBF_third - ...
               ((x - Xmin) ./ (Xmax - Xmin)) ).^2 , 2) ) / L_third ).^2 )' ...
     * W_RBF_third;
 
-optsGA_RBF2 = optimoptions('ga', ... %Running the GA again
-    'MaxGenerations', 100, ...
-    'PopulationSize', 1000, ...
-    'Display', 'off');
-
-[xRBF_opt3, fRBF_opt3] = ga(@(x) f_RBF_ref2(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA_RBF2);
+[xRBF_opt3, fRBF_opt3] = ga(@(x) f_RBF_ref2(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
 
 xRBF_opt3 = max(xRBF_opt3, origMin);
 xRBF_opt3 = min(xRBF_opt3, origMax);
@@ -1047,7 +1172,7 @@ patch('Vertices', C, 'Faces', faces3, ...
 xlabel('x1 (Advert)');
 ylabel('x2 (Target)');
 zlabel('x3 (Skew)');
-title('4D Scatter of Third RBF Surrogate (colour = predicted MCSI)');
+title('RBF 4D Scatter of Third RBF Surrogate (colour = predicted MCSI)');
 colorbar;
 grid on;
 view(45,25);
@@ -1087,3 +1212,9 @@ grid on;
 view(45,25);
 legend('Location','best');
 hold off;
+
+%FInd the True Minima for the example functions
+[xTrue, fTrue] = ga(@(x) ChosenFunc(x), 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
+
+fprintf('GA Function True min at [%.3f, %.3f, %.3f]\n', xTrue(1), xTrue(2), xTrue(3));
+fprintf('  True MCSI  = %.4f\n', fTrue);
