@@ -4,6 +4,10 @@ function funcs = makeEngFuncs
     funcs.bendingStress = @bendingStress;
     funcs.secondMomentAreaArraySkinThicknessGradient = @secondMomentAreaArraySkinThicknessGradient;
     funcs.findAerofoilPositiveHeight = @findAerofoilPositiveHeight;
+    funcs.findAerofoilHeightDifferential = @findAerofoilHeightDifferential;
+    funcs.secondMomentAreaRectangle = @secondMomentAreaRectangle;
+    funcs.applySecondMomentOffset = @applySecondMomentOffset;
+    funcs.findAerofoilHeight = @findAerofoilHeight;
 end
 % Plot the aerofoil profile
 % clc, clear all, close all
@@ -177,4 +181,13 @@ function secondMomentAreaArray = secondMomentAreaArraySkinThicknessGradient(N, c
         secondMomentAreaArray(i) = findSecondMomentAreaSkinMethod(chord, thickness);
     end
     
+end
+
+function secondMomentArea =  secondMomentAreaRectangle(width, height)
+    secondMomentArea = width.*(height.^3) / 12;
+end
+
+function secondMomentArea = applySecondMomentOffset(localSecondMomentArea, area, distanceFromNeutralAxis)
+
+    secondMomentArea = localSecondMomentArea + area .* distanceFromNeutralAxis.^2;
 end
