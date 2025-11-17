@@ -1,5 +1,7 @@
 % sam test space
-clear all
+clear all, clc
+
+[denormalisedPoints, MCSI_samples] = loadCSVSamples("exampleSamples.csv")
 
 minAdvert = 0;
 maxAdvert = 200;
