@@ -55,6 +55,8 @@ plot(dists, bendingStresses);
 xlabel('distance, m'); %set labels
 ylabel('Bending Stress, MPa');
 
+fminsearch()
+
 
 
 

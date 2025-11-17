@@ -8,6 +8,7 @@ function funcs = makeEngFuncs
     funcs.secondMomentAreaRectangle = @secondMomentAreaRectangle;
     funcs.applySecondMomentOffset = @applySecondMomentOffset;
     funcs.findAerofoilHeight = @findAerofoilHeight;
+    funcs.findVolumeSkinThicknessGradient = @findVolumeSkinThicknessGradient;
 end
 % Plot the aerofoil profile
 % clc, clear all, close all
