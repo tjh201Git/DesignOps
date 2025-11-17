@@ -1,6 +1,6 @@
 %MATLAB BLACKBOX OPTIMIZER
 %=============================================================
-%   Program Steps
+%   Program Steps - Written by Thomas Hodges - tjh201
 %
 % 1) Initialization
 %   -First it sets up the variable bounds, the chosen 'Blackbox' function
@@ -150,7 +150,7 @@ RBFthirdSurrogateNodes = 5;
 
 optsGA = optimoptions('ga', ...  
     'MaxGenerations', 100, ... 
-    'PopulationSize', 10000);   
+    'PopulationSize', 1000);   
 
 %===========Star Discrepency Sampling Method===================
 
@@ -261,18 +261,56 @@ X_norm = (samples - Xmin) ./ (Xmax - Xmin);  % 20x3 matrix in [0,1]​
 x1 = X_norm(:,1); %extract each input dimension from the 20
 x2 = X_norm(:,2);
 x3 = X_norm(:,3);
+ 
+%==============Decide on the Polynomial Order==============================
 
-Phi = [ ... % Phi = [1, x1, x2, x3, x1^2, x2^2, x3^2, x1*x2, x1*x3, x2*x3]
-    ones(Nodes,1), ...      
-    x1, x2, x3, ...               
-    x1.^2, x2.^2, x3.^2, ...       
-    x1.*x2, x1.*x3, x2.*x3];       
+Phi1order = buildPhi(Nodes,1,x1,x2,x3);
+Phi2order = buildPhi(Nodes,2,x1,x2,x3);
+Phi3order = buildPhi(Nodes,3,x1,x2,x3);
+Phi4order = buildPhi(Nodes,4,x1,x2,x3);
+Phi5order = buildPhi(Nodes,5,x1,x2,x3);
+
+%========Leave One Out Cross Validation and Quality of Fit===============================
+% Leave one out Validation will leave a point out of the surrogate model
+% and assess how well the model predicts it and accumulates the squared prediction error.
+% This provides an unbiased estimate of surrogate accuracy.
+
+RMSE_orders = zeros(5,1);
+
+RMSE_orders(1) = LOOV(Nodes,Phi1order,MCSI_samples); %Root mean squared of the sum of squared errors
+RMSE_orders(2) = LOOV(Nodes,Phi2order,MCSI_samples); %Root mean squared of the sum of squared errors
+RMSE_orders(3) = LOOV(Nodes,Phi3order,MCSI_samples); %Root mean squared of the sum of squared errors
+RMSE_orders(4) = LOOV(Nodes,Phi4order,MCSI_samples); %Root mean squared of the sum of squared errors
+RMSE_orders(5) = LOOV(Nodes,Phi5order,MCSI_samples); %Root mean squared of the sum of squared errors
+
+rangeM = max(MCSI_samples) - min(MCSI_samples);
+
+[bestRMSE, BestOrder] = min(RMSE_orders);
+
+errorPercent = (bestRMSE/rangeM)*100; %the error expressed as a range of the MCSI values
+
+fprintf('POLY First Surrogate LOOCV Error = %.4f (%.2f%% of MCSI range), Order:%.1f\n', bestRMSE, errorPercent, BestOrder);
+
+switch BestOrder %Switch case for which best order was chosen
+    case 1
+        Phi = Phi1order;
+    case 2
+        Phi = Phi2order;
+    case 3
+        Phi = Phi3order;
+    case 4
+        Phi = Phi4order;
+    case 5
+        Phi = Phi5order;
+    otherwise
+        error('BestOrder must be an integer between 1 and 5.');
+end
 
 A = pinv(Phi) * MCSI_samples; % Solve for coefficients using pseudo-inverse
                               % find the least squares solution that fits
 
-%Build query points and visualise the estimated predicted polynomial                              
 
+%Build query points and visualise the estimated predicted polynomial                              
 %First Create a 2000 by 3 matrix to visualise the points(2000 is a
 %resolution)
 Xq = [ ...
@@ -288,59 +326,30 @@ x1qn = Xq_norm(:,1);
 x2qn = Xq_norm(:,2);
 x3qn = Xq_norm(:,3);
 
-Phi_q = [ ...        %Construct the same Phi matrix for the query points
-    ones(size(Xq,1),1), ...
-    x1qn, x2qn, x3qn, ...
-    x1qn.^2, x2qn.^2, x3qn.^2, ...
-    x1qn.*x2qn, x1qn.*x3qn, x2qn.*x3qn ];
+%==================Choose the order of the Phi_q====================================
+Phi1order_q = buildPhi_q(Xq,1,x1qn,x2qn,x3qn);
+Phi2order_q = buildPhi_q(Xq,2,x1qn,x2qn,x3qn);
+Phi3order_q = buildPhi_q(Xq,3,x1qn,x2qn,x3qn);
+Phi4order_q = buildPhi_q(Xq,4,x1qn,x2qn,x3qn);
+Phi5order_q = buildPhi_q(Xq,5,x1qn,x2qn,x3qn);
+
+switch BestOrder %Switch case for which best order was chosen
+    case 1
+        Phi_q = Phi1order_q;
+    case 2
+        Phi_q = Phi2order_q;
+    case 3
+        Phi_q = Phi3order_q;
+    case 4
+        Phi_q = Phi4order_q;
+    case 5
+        Phi_q = Phi5order_q;
+    otherwise
+        error('BestOrder must be an integer between 1 and 5.');
+end
 
 %Evaluate the surrogate model at each query pont 
 yhat = Phi_q * A;                     % nq^2 x 1
-
-%========Decide on the Polynomial Order==============================
-
-
-
-
-
-%========Leave One Out Cross Validation and Quality of Fit===============================
-% Leave one out Validation will leave a point out of the surrogate model
-% and assess how well the model predicts it and accumulates the squared prediction error.
-% This provides an unbiased estimate of surrogate accuracy.
-
-yhatLOO = zeros(Nodes,1); %Initialize leave one out yhat
-sseLOO = 0;              %Initialize sum of squared errors  
-
-for i = 1:Nodes 
-
-    %CROSS VALIDATION - use the data of all nodes except the current one
-    idx_train = setdiff(1:Nodes, i);  
-    
-    Phi_train = Phi(idx_train,:);  %trains a phi using the current points except the i'th point
-    y_train   = MCSI_samples(idx_train);      
-    A_i = pinv(Phi_train) * y_train;
-    yhat_i = Phi(i,:) * A_i;   %Makes a surrogate model using every point except i
-                               %a different surrogate is made each time in
-                               %loop
-    yhatLOO(i) = yhat_i;       %Stores the current yhat leave one out value
-    
-    
-    sseLOO = sseLOO + (MCSI_samples(i) - yhat_i)^2;  %calculates the total sum of squared error
-                                                     % Accumulate error
-                                                     % across all
-end
-
-RMSE_LOO = sqrt(sseLOO / Nodes); %Root mean squared of the sum of squared errors
-
-minM = min(MCSI_samples);
-maxM = max(MCSI_samples);
-rangeM = maxM - minM;
-stdM   = std(MCSI_samples);
-
-errorPercent = (RMSE_LOO/rangeM)*100; %the error expressed as a range of the MCSI values
-
-fprintf('First Surrogate LOOCV Error = %.4f (%.2f%% of MCSI range)\n', RMSE_LOO, errorPercent);
-
 
 %==============Plotting FUll surrogate===================================
 figure('Name', 'Plot of the Surrogate Model', 'NumberTitle', 'off');
@@ -446,13 +455,48 @@ x1a = X_norm_aug(:,1);
 x2a = X_norm_aug(:,2);
 x3a = X_norm_aug(:,3);
 
-Phi_new = [ ...
-    ones(N_new,1), ...
-    x1a, x2a, x3a, ...
-    x1a.^2, x2a.^2, x3a.^2, ...
-    x1a.*x2a, x1a.*x3a, x2a.*x3a ];
+currentNodeCount = PolysurrogateNodes + Nodes;
+
+%===========Find the best Order=========================
+Phi1order = buildPhi(currentNodeCount,1,x1a,x2a,x3a);
+Phi2order = buildPhi(currentNodeCount,2,x1a,x2a,x3a);
+Phi3order = buildPhi(currentNodeCount,3,x1a,x2a,x3a);
+Phi4order = buildPhi(currentNodeCount,4,x1a,x2a,x3a);
+Phi5order = buildPhi(currentNodeCount,5,x1a,x2a,x3a);
+
+RMSE_orders = zeros(5,1);
+
+RMSE_orders(1) = LOOV(currentNodeCount,Phi1order,MCSI_samples_new); %Root mean squared of the sum of squared errors
+RMSE_orders(2) = LOOV(currentNodeCount,Phi2order,MCSI_samples_new); %Root mean squared of the sum of squared errors
+RMSE_orders(3) = LOOV(currentNodeCount,Phi3order,MCSI_samples_new); %Root mean squared of the sum of squared errors
+RMSE_orders(4) = LOOV(currentNodeCount,Phi4order,MCSI_samples_new); %Root mean squared of the sum of squared errors
+RMSE_orders(5) = LOOV(currentNodeCount,Phi5order,MCSI_samples_new); %Root mean squared of the sum of squared errors
+
+rangeM = max(MCSI_samples_new) - min(MCSI_samples_new);
+
+[bestRMSE, BestOrder] = min(RMSE_orders);
+
+errorPercent = (bestRMSE/rangeM)*100; %the error expressed as a range of the MCSI values
+
+fprintf('POLY Second Surrogate LOOCV Error = %.4f (%.2f%% of MCSI range), Order:%.1f\n', bestRMSE, errorPercent, BestOrder);
+
+switch BestOrder %Switch case for which best order was chosen
+    case 1
+        Phi_new = Phi1order;
+    case 2
+        Phi_new = Phi2order;
+    case 3
+        Phi_new = Phi3order;
+    case 4
+        Phi_new = Phi4order;
+    case 5
+        Phi_new = Phi5order;
+    otherwise
+        error('BestOrder must be an integer between 1 and 5.');
+end
 
 A_new = pinv(Phi_new) * MCSI_samples_new;  
+
 
 Xq_new = [ ...
     rand(2000,1)*(maxAdvert-minAdvert) + minAdvert, ...
@@ -465,20 +509,34 @@ x1qn_new = Xq_norm_new(:,1);
 x2qn_new = Xq_norm_new(:,2);
 x3qn_new = Xq_norm_new(:,3);
 
-Phi_q = [ ...       
-    ones(size(Xq_new,1),1), ...
-    x1qn_new, x2qn_new, x3qn_new, ...
-    x1qn_new.^2, x2qn_new.^2, x3qn_new.^2, ...
-    x1qn_new.*x2qn_new, x1qn_new.*x3qn_new, x2qn_new.*x3qn_new ];
+Phi1order_q = buildPhi_q(Xq_new,1,x1qn_new,x2qn_new,x3qn_new);
+Phi2order_q = buildPhi_q(Xq_new,2,x1qn_new,x2qn_new,x3qn_new);
+Phi3order_q = buildPhi_q(Xq_new,3,x1qn_new,x2qn_new,x3qn_new);
+Phi4order_q = buildPhi_q(Xq_new,4,x1qn_new,x2qn_new,x3qn_new);
+Phi5order_q = buildPhi_q(Xq_new,5,x1qn_new,x2qn_new,x3qn_new);
 
-yhat_new = Phi_q * A_new;            
+switch BestOrder %Switch case for which best order was chosen
+    case 1
+        Phi_q_new = Phi1order_q;
+    case 2
+        Phi_q_new = Phi2order_q;
+    case 3
+        Phi_q_new = Phi3order_q;
+    case 4
+        Phi_q_new = Phi4order_q;
+    case 5
+        Phi_q_new = Phi5order_q;
+    otherwise
+        error('BestOrder must be an integer between 1 and 5.');
+end
+
+yhat_new = Phi_q_new * A_new;            
 
 %========Plotting new surrogate======================
 figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'off');
 
 scatter3(Xq_new(:,1), Xq_new(:,2), Xq_new(:,3), 25, yhat_new, 'filled');
 hold on;
-
 
 %====================Draw refinement window=====================
 
@@ -520,41 +578,6 @@ colorbar;
 grid on;
 view(45, 25);
 
-%========Leave One Out Cross Validation and Quality of Fit of New Surrogate===============================
-
-yhatLOO_new = zeros(N_new,1); %Initialize leave one out yhat
-sseLOO_new = 0;              %Initialize sum of squared errors  
-
-for i = 1:N_new 
-
-    %CROSS VALIDATION - use the data of all nodes except the current one
-    idx_train = setdiff(1:N_new, i);  
-    
-    Phi_train = Phi_new(idx_train,:);  %trains a phi using the current points except the i'th point
-    y_train   = MCSI_samples_new(idx_train);      
-    A_i = pinv(Phi_train) * y_train;
-    yhat_i = Phi_new(i,:) * A_i;   %Makes a surrogate model using every point except i
-                               %a different surrogate is made each time in
-                               %loop
-    yhatLOO_new(i) = yhat_i;       %Stores the current yhat leave one out value
-    
-    
-    sseLOO_new = sseLOO_new + (MCSI_samples_new(i) - yhat_i)^2;  %calculates the total sum of squared error
-                                                     % Accumulate error
-                                                     % across all
-end
-
-RMSE_LOO_new = sqrt(sseLOO_new / N_new); %Root mean squared of the sum of squared errors
-
-minM = min(MCSI_samples_new);
-maxM = max(MCSI_samples_new);
-rangeM = maxM - minM;
-stdM   = std(MCSI_samples_new);
-
-errorPercent_new = (RMSE_LOO_new/rangeM)*100; %the error expressed as a range of the MCSI values
-
-fprintf('LOOCV Error For Refined Surrogate = %.4f (%.2f%% of MCSI range)\n', RMSE_LOO_new, errorPercent_new);
-
 %=============Minima of the refined Surrogate====================================
 
 %=====Run a Genetic Algorithim on the Surrogate to find Minima========
@@ -585,7 +608,6 @@ fprintf('GA surrogate min at [%.3f, %.3f, %.3f]\n', xGA(1), xGA(2), xGA(3));
 
 
 %===============Third Surrogate=============
-
 %Will now use the GA optimum of the Second surrogate as the center of the
 %smaller refinement window. This Repeats the design refinement logic but
 %with a tighter zoom
@@ -636,11 +658,42 @@ x1t = X_norm_third(:,1);
 x2t = X_norm_third(:,2);
 x3t = X_norm_third(:,3);
 
-Phi_third = [ ...
-    ones(N_third,1), ...
-    x1t, x2t, x3t, ...
-    x1t.^2, x2t.^2, x3t.^2, ...
-    x1t.*x2t, x1t.*x3t, x2t.*x3t ];
+Phi1order = buildPhi(N_third,1,x1t,x2t,x3t);
+Phi2order = buildPhi(N_third,2,x1t,x2t,x3t);
+Phi3order = buildPhi(N_third,3,x1t,x2t,x3t);
+Phi4order = buildPhi(N_third,4,x1t,x2t,x3t);
+Phi5order = buildPhi(N_third,5,x1t,x2t,x3t);
+
+RMSE_orders = zeros(5,1);
+
+RMSE_orders(1) = LOOV(N_third,Phi1order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(2) = LOOV(N_third,Phi2order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(3) = LOOV(N_third,Phi3order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(4) = LOOV(N_third,Phi4order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+RMSE_orders(5) = LOOV(N_third,Phi5order,MCSI_samples_third); %Root mean squared of the sum of squared errors
+
+rangeM = max(MCSI_samples_third) - min(MCSI_samples_third);
+
+[bestRMSE, BestOrder] = min(RMSE_orders);
+
+errorPercent = (bestRMSE/rangeM)*100; %the error expressed as a range of the MCSI values
+
+fprintf('POLY Secnd Surrogate LOOCV Error = %.4f (%.2f%% of MCSI range), Order:%.1f\n', bestRMSE, errorPercent, BestOrder);
+
+switch BestOrder %Switch case for which best order was chosen
+    case 1
+        Phi_third = Phi1order;
+    case 2
+        Phi_third = Phi2order;
+    case 3
+        Phi_third = Phi3order;
+    case 4
+        Phi_third = Phi4order;
+    case 5
+        Phi_third = Phi5order;
+    otherwise
+        error('BestOrder must be an integer between 1 and 5.');
+end
 
 A_third = pinv(Phi_third) * MCSI_samples_third;
 
@@ -655,14 +708,28 @@ x1q3 = Xq_norm_third(:,1);
 x2q3 = Xq_norm_third(:,2);
 x3q3 = Xq_norm_third(:,3);
 
-Phi_q3 = [ ...
-    ones(size(Xq_third,1),1), ...
-    x1q3, x2q3, x3q3, ...
-    x1q3.^2, x2q3.^2, x3q3.^2, ...
-    x1q3.*x2q3, x1q3.*x3q3, x2q3.*x3q3 ];
+Phi1order_q = buildPhi_q(Xq_third,1,x1q3,x2q3,x3q3);
+Phi2order_q = buildPhi_q(Xq_third,2,x1q3,x2q3,x3q3);
+Phi3order_q = buildPhi_q(Xq_third,3,x1q3,x2q3,x3q3);
+Phi4order_q = buildPhi_q(Xq_third,4,x1q3,x2q3,x3q3);
+Phi5order_q = buildPhi_q(Xq_third,5,x1q3,x2q3,x3q3);
+
+switch BestOrder %Switch case for which best order was chosen
+    case 1
+        Phi_q3 = Phi1order_q;
+    case 2
+        Phi_q3 = Phi2order_q;
+    case 3
+        Phi_q3 = Phi3order_q;
+    case 4
+        Phi_q3 = Phi4order_q;
+    case 5
+        Phi_q3 = Phi5order_q;
+    otherwise
+        error('BestOrder must be an integer between 1 and 5.');
+end
 
 yhat_third = Phi_q3 * A_third;
-
 
 figure('Name', 'Third Refined Surrogate (zoom = 0.3)', 'NumberTitle', 'off');
 scatter3(Xq_third(:,1), Xq_third(:,2), Xq_third(:,3), 25, yhat_third, 'filled');
@@ -721,7 +788,6 @@ figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'of
 
 scatter3(Xq_third(:,1), Xq_third(:,2), Xq_third(:,3), 25, yhat_third, 'filled');
 hold on;
-
 
 %====================Draw refinement window=====================
 
@@ -790,8 +856,6 @@ title('POLY 4D Scatter of Refined Surrogate Model (colour = predicted MCSI)');
 colorbar;
 grid on;
 view(45, 25);
-
-
 
 %===============Plot the Original MCSI samples VS the NEW=============================
 figure('Name', 'Original Samples Vs Refined1 and Refined2', 'NumberTitle', 'off');
