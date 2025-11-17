@@ -1,2 +1,3 @@
 function output = exampFunc(x)
     output = sum(0.1 .* x.^2 - cos(2 .* x), 2);
+end
