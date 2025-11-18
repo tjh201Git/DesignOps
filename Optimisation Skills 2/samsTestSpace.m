@@ -1,7 +1,7 @@
 % sam test space
 clear all, clc
 
-filename = "sam.csv";
+filename = "ACTUALTEST.csv";
 
 minAdvert = 0;
 maxAdvert = 200;
@@ -25,31 +25,32 @@ dstarIterations = 10000;
 nodes = 30;
 saveDStarDistribution = false;
 
-blackBoxFunc = @sphere3;
+% blackBoxFunc = @sphere3;
 % blackBoxFunc = @griewank3;
 
-plotTrueExampleFunction(blackBoxFunc);
+% plotTrueExampleFunction(blackBoxFunc);
+
 
 samples = [];
 mcsi_values = [];
 
 %figure initialize
-figAll = figure('Name','All Surrogates Comparison','NumberTitle','off');
-tiledlayout(figAll, 2, 2); %one Master popup for the plotting
-
-% 1st Iteration
-[pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 30, dstarIterations, saveDStarDistribution);
-tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
-samples = [samples; tempSamplePoints];
-
-temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
+% figAll = figure('Name','All Surrogates Comparison','NumberTitle','off');
+% tiledlayout(figAll, 2, 2); %one Master popup for the plotting
+% 
+% % 1st Iteration.
+% [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 30, dstarIterations, saveDStarDistribution);
+% tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
+% % samples = [samples; tempSamplePoints];
+% 
+% % temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
-% %================================================================================
-mcsi_values = [mcsi_values; temp_mcsi_values];
-
-% 1st model
-zoomFactor = 1.25;
-[refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "30 node Exploration", colourRed);
+% % %================================================================================
+% % mcsi_values = [mcsi_values; temp_mcsi_values];
+% 
+% % 1st model
+% zoomFactor = 1.25;
+% [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "30 node Exploration", colourRed);
 
 
 figAll2 = figure('Name','All Surrogates Comparison','NumberTitle','off');
@@ -59,38 +60,47 @@ tiledlayout(figAll2, 2, 2); %one Master popup for the plotting
 % normSamples = normaliseMatrix(samples, minVariables, maxVariables);
 % normRefMin = normaliseMatrix(refMin, minVariables, maxVariables);
 % normRefMax = normaliseMatrix(refMax, minVariables, maxVariables);
-[pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
-% [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
-tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
-samples = [samples; tempSamplePoints];
-
+% [pointsMatrix, bestDStar, numExistingSamplesInRefArea] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
+% % [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
+% tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
+% % samples = [samples; tempSamplePoints];
+% 
+% % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
+% % temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
-temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
-mcsi_values = [mcsi_values; temp_mcsi_values];
+% mcsi_values = [mcsi_values; temp_mcsi_values];
 
-zoomFactor = 0.9;
-% [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName2");
-[refMin, refMax] = fitSurrogateAndZoomArea(samples, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Refined Zone", colourRed);
+% [samples, mcsi_values] = loadCSVSamples(filename);
+% 
+% [samples, mcsi_values] = loadCSVSamples(filename);
+% zoomFactor = 0.9;
+% % % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName2");
+% [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "Additional 5 Nodes in Refined Zone", colourRed)
 
-
-figAll3 = figure('Name','All Surrogates Comparison','NumberTitle','off');
-tiledlayout(figAll3, 2, 2); %one Master popup for the plotting
-% 3rd iteration
-% normSamples = normaliseMatrix(samples, minVariables, maxVariables);
-% normRefMin = normaliseMatrix(refMin, minVariables, maxVariables);
-% normRefMax = normaliseMatrix(refMax, minVariables, maxVariables);
-[pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
-% [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
-tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
-samples = [samples; tempSamplePoints];
-
+% refMin = [ 50.4272   24.2835         0];
+% refMax = [200.0000   60.0000    0.6545];
+% [samples, mcsi_values] = loadCSVSamples(filename);
+% 
+% figAll3 = figure('Name','All Surrogates Comparison','NumberTitle','off');
+% tiledlayout(figAll3, 2, 2); %one Master popup for the plotting
+% % 3rd iteration
+% % normSamples = normaliseMatrix(samples, minVariables, maxVariables);
+% % normRefMin = normaliseMatrix(refMin, minVariables, maxVariables);
+% % normRefMax = normaliseMatrix(refMax, minVariables, maxVariables);
+% % [samples, mcsi_values] = loadCSVSamples(filename);
+% [pointsMatrix, bestDStar, numExistingSamplesInRefArea] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
+% % [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
+% tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
+% % samples = [samples; tempSamplePoints];
+% 
+% % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
+% % temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
-temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
-mcsi_values = [mcsi_values; temp_mcsi_values];
-
-zoomFactor = 0.6;
-% [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName3");
-[refMin, refMax] = fitSurrogateAndZoomArea(samples, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone", colourOrange);
+% % mcsi_values = [mcsi_values; temp_mcsi_values];
+% 
+% zoomFactor = 0.6;
+% % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName3");
+% [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone", colourOrange);
 
 
 figAll4 = figure('Name','All Surrogates Comparison','NumberTitle','off');
@@ -99,18 +109,21 @@ tiledlayout(figAll4, 2, 2); %one Master popup for the plotting
 % normSamples = normaliseMatrix(samples, minVariables, maxVariables);
 % normRefMin = normaliseMatrix(refMin, minVariables, maxVariables);
 % normRefMax = normaliseMatrix(refMax, minVariables, maxVariables);
-[pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
+% [pointsMatrix, bestDStar, numExistingSamplesInRefArea] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
 % [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
-tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
-samples = [samples; tempSamplePoints];
+% tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
+% samples = [samples; tempSamplePoints];
 
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
-temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
-mcsi_values = [mcsi_values; temp_mcsi_values];
+% temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
+% [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
+% mcsi_values = [mcsi_values; temp_mcsi_values];
 
+
+[samples, mcsi_values] = loadCSVSamples(filename);
 zoomFactor = 0.4;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName3");
-[refMin, refMax] = fitSurrogateAndZoomArea(samples, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone",colourOrange);
+[refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone",colourOrange);
 
 
 figAll5 = figure('Name','All Surrogates Comparison','NumberTitle','off');
@@ -119,15 +132,16 @@ tiledlayout(figAll5, 2, 2); %one Master popup for the plotting
 % normSamples = normaliseMatrix(samples, minVariables, maxVariables);
 % normRefMin = normaliseMatrix(refMin, minVariables, maxVariables);
 % normRefMax = normaliseMatrix(refMax, minVariables, maxVariables);
-[pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
+[pointsMatrix, bestDStar, numExistingSamplesInRefArea] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
 % [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
 tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
-samples = [samples; tempSamplePoints];
+% samples = [samples; tempSamplePoints];
 
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
-temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
-mcsi_values = [mcsi_values; temp_mcsi_values];
+% temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
+[samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
+% mcsi_values = [mcsi_values; temp_mcsi_values];
 
 zoomFactor = 0.2;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName3");
-[refMin, refMax] = fitSurrogateAndZoomArea(samples, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone", colourGreen);
+[refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone", colourGreen);

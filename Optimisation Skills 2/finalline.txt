@@ -1,0 +1,3 @@
+Best guess according to surrogate: MSCI = -4.0668 @ (128.7115 42.0255 0.3128)
+
+4.0748

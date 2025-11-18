@@ -1,4 +1,4 @@
-function [pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, refMin, refMax, varMins, varMaxs, dimensions, nodes, iterations)
+function [pointsMatrix, bestDStar, numExistingSamplesInRefArea] = refinementAreaPointDistribution(samples, refMin, refMax, varMins, varMaxs, dimensions, nodes, iterations)
     
     % The 'samples' input is UNNORMALIZED data from the entire space.
     % 'refMin' and 'refMax' are the UNNORMALIZED bounds of the refinement area.
@@ -59,6 +59,8 @@ function [pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, re
         end
     
     end
+    pointsMatrix = normNewPoints;
+
 end
 
 % --- Supporting Functions (Provided in Original Prompt) ---
