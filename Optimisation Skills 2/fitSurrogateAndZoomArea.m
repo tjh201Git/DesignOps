@@ -1,4 +1,4 @@
-function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomFactor, plotGraphs, stageName)
+function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomFactor, plotGraphs, stageName, boxColor)
 
     if nargin < 4
         stageName = string(length(samples(:,1)));
@@ -181,14 +181,14 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     refMin_rbf = max(xSur_opt_poly - halfWidth, Xmin);
     refMax_rbf = min(xSur_opt_poly + halfWidth, Xmax);
     
-    switch stageName
-    case "30 node Exploration"
-        boxColor = 'r';
-    case "Additional 5 Nodes in Refined Zone"
-        boxColor = 'r';
-    case "Additional 5 Nodes in Further Refined Zone"
-        boxColor = 'g';
-    end
+    % switch stageName
+    % case "30 node Exploration"
+    %     boxColor = 'r';
+    % case "Additional 5 Nodes in Refined Zone"
+    %     boxColor = 'r';
+    % case "Additional 5 Nodes in Further Refined Zone"
+    %     boxColor = 'g';
+    % end
     
 
     nexttile; %poly tile
