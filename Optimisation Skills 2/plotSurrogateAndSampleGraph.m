@@ -5,14 +5,14 @@ function plotSurrogateAndSampleGraph(surrogatePoints, yhat, samplePoints, stageN
             nexttile
         end
 
-        switch stageName
-            case "30 node Exploration"
-                boxColor = 'r';
-            case "Additional 5 Nodes in Refined Zone"
-                boxColor = 'r';
-            case "Additional 5 Nodes in Further Refined Zone"
-                boxColor = 'g';
-        end
+        % switch stageName
+        %     case "30 node Exploration"
+        %         boxColor = 'r';
+        %     case "Additional 5 Nodes in Refined Zone"
+        %         boxColor = 'r';
+        %     case "Additional 5 Nodes in Further Refined Zone"
+        %         boxColor = 'g';
+        % end
 
         %figure('Name', 'Surrogate Model', 'NumberTitle', 'off');
         % nexttile;
