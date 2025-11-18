@@ -192,7 +192,7 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     
 
     nexttile; %poly tile
-    scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_rbf, 'filled'); 
+    scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_poly, 'filled'); 
     hold on;
 
     plot3(xSur_opt_poly(1), xSur_opt_poly(2), xSur_opt_poly(3), ...
@@ -224,7 +224,7 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     drawRefinementBox(refMin_poly, refMax_poly, boxColor);
 
     nexttile; %rbf tile
-    scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_poly, 'filled'); 
+    scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_rbf, 'filled'); 
     hold on;
 
     plot3(xSur_opt_rbf(1), xSur_opt_rbf(2), xSur_opt_rbf(3), ...

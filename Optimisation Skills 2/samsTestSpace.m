@@ -18,7 +18,7 @@ optsGA = optimoptions('ga', ...
 
 dimensions = 3;
 dstarIterations = 4000;
-nodes = 30;
+nodes = 40;
 saveDStarDistribution = false;
 
 blackBoxFunc = @sphere3;
@@ -44,7 +44,7 @@ temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
 mcsi_values = [mcsi_values; temp_mcsi_values];
 
 % 1st model
-zoomFactor = 0.9;
+zoomFactor = 1.2;
 [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "30 node Exploration");
 
 
