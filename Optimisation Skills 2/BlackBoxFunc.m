@@ -138,7 +138,7 @@ ChosenFunc = @rastrigin;
 %ChosenFunc = @ackley3;
 %ChosenFunc = @sphere3;
 %ChosenFunc = @griewank3;
-%ChosenFunc = @manualBlackbox;
+%@ChosenFunc = @manualBlackbox;
 
 Nodes  = 30;
 
@@ -150,7 +150,7 @@ RBFthirdSurrogateNodes = 5;
 
 optsGA = optimoptions('ga', ...  
     'MaxGenerations', 1000, ... 
-    'PopulationSize', 10000);   
+    'PopulationSize', 1000);   
 
 %===========Star Discrepency Sampling Method===================
 
@@ -404,7 +404,7 @@ upperBound = Xmax;
 xSur_opt = max(xSur_opt, origMin); %Ensure the point isnt outside lower bound
 xSur_opt = min(xSur_opt, origMax); %Ensure the point isnt outside upper bound
 
-zoomFactor = 0.5; % ZOOM in by 30% of original size
+zoomFactor = 1.5; % ZOOM in by 30% of original size
 
 halfWidth = 0.5 * zoomFactor .* (origMax - origMin); %Finds half the width of the refinement Window
 

@@ -21,14 +21,17 @@ dstarIterations = 5000;
 nodes = 30;
 saveDStarDistribution = false;
 
-% blackBoxFunc = @sphere3;
-blackBoxFunc = @griewank3;
+blackBoxFunc = @sphere3;
+% blackBoxFunc = @griewank3;
 
 plotTrueExampleFunction(blackBoxFunc);
 
 samples = [];
 mcsi_values = [];
 
+%figure initialize
+figAll = figure('Name','All Surrogates Comparison','NumberTitle','off');
+tiledlayout(figAll, 2, 2); %one Master popup for the plotting
 
 % 1st Iteration
 [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 50, dstarIterations, saveDStarDistribution);
@@ -42,10 +45,11 @@ mcsi_values = [mcsi_values; temp_mcsi_values];
 
 % 1st model
 zoomFactor = 0.9;
-[refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName");
+[refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "30 node Exploration");
 
 
-
+figAll2 = figure('Name','All Surrogates Comparison','NumberTitle','off');
+tiledlayout(figAll2, 2, 2); %one Master popup for the plotting
 % 2nd iteration
 [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
 tempSamplePoints = denormaliseMatrix(pointsMatrix, refMin, refMax);
@@ -57,10 +61,11 @@ mcsi_values = [mcsi_values; temp_mcsi_values];
 
 zoomFactor = 0.6;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName2");
-[refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "testStageName2");
+[refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Refined Zone");
 
 
-
+figAll3 = figure('Name','All Surrogates Comparison','NumberTitle','off');
+tiledlayout(figAll3, 2, 2); %one Master popup for the plotting
 % 3rd iteration
 [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
 tempSamplePoints = denormaliseMatrix(pointsMatrix, refMin, refMax);
@@ -72,4 +77,4 @@ mcsi_values = [mcsi_values; temp_mcsi_values];
 
 zoomFactor = 0.4;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName3");
-[refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "testStageName3");
+[refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone");
