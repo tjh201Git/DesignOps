@@ -17,7 +17,7 @@ optsGA = optimoptions('ga', ...
     'PopulationSize', 1000);  
 
 dimensions = 3;
-dstarIterations = 5000;
+dstarIterations = 4000;
 nodes = 30;
 saveDStarDistribution = false;
 
@@ -29,9 +29,12 @@ plotTrueExampleFunction(blackBoxFunc);
 samples = [];
 mcsi_values = [];
 
+allRefMins = [];
+allRefMaxs = [];
+
 
 % 1st Iteration
-[pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 50, dstarIterations, saveDStarDistribution);
+[pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 30, dstarIterations, saveDStarDistribution);
 tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
 samples = [samples; tempSamplePoints];
 
@@ -43,12 +46,18 @@ mcsi_values = [mcsi_values; temp_mcsi_values];
 % 1st model
 zoomFactor = 0.9;
 [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName");
-
+allRefMins = [allRefMins; refMin];
+allRefMaxs = [allRefMaxs; refMax];
 
 
 % 2nd iteration
-[pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
-tempSamplePoints = denormaliseMatrix(pointsMatrix, refMin, refMax);
+
+% normSamples = normaliseMatrix(samples, minVariables, maxVariables);
+% normRefMin = normaliseMatrix(refMin, minVariables, maxVariables);
+% normRefMax = normaliseMatrix(refMax, minVariables, maxVariables);
+[pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
+% [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
+tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
 samples = [samples; tempSamplePoints];
 
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
@@ -58,12 +67,17 @@ mcsi_values = [mcsi_values; temp_mcsi_values];
 zoomFactor = 0.6;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName2");
 [refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "testStageName2");
-
+allRefMins = [allRefMins; refMin];
+allRefMaxs = [allRefMaxs; refMax];
 
 
 % 3rd iteration
-[pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
-tempSamplePoints = denormaliseMatrix(pointsMatrix, refMin, refMax);
+% normSamples = normaliseMatrix(samples, minVariables, maxVariables);
+% normRefMin = normaliseMatrix(refMin, minVariables, maxVariables);
+% normRefMax = normaliseMatrix(refMax, minVariables, maxVariables);
+[pointsMatrix, bestDStar] = refinementAreaPointDistribution(samples, refMin, refMax, minVariables, maxVariables, dimensions, 5, dstarIterations);
+% [pointsMatrix, bestDStar] = bestDStarPointDistribution(dimensions, 5, dstarIterations, saveDStarDistribution);
+tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
 samples = [samples; tempSamplePoints];
 
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
@@ -73,3 +87,9 @@ mcsi_values = [mcsi_values; temp_mcsi_values];
 zoomFactor = 0.4;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName3");
 [refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "testStageName3");
+allRefMins = [allRefMins; refMin]
+allRefMaxs = [allRefMaxs; refMax]
+
+
+% figure
+drawRefinementBoxes(allRefMins, allRefMaxs);

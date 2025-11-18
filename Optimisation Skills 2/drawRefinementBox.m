@@ -1,5 +1,5 @@
 % draw refinement box
-function drawRefinementBox(refMin,refMax)
+function drawRefinementBox(refMin,refMax, colour)
 % Draw refinement box
         % Vertices of the cube
         xBox = [refMin(1) refMax(1) refMax(1) refMin(1) refMin(1) refMax(1) refMax(1) refMin(1)];
@@ -15,6 +15,6 @@ function drawRefinementBox(refMin,refMax)
                  4 1 5 8];
         
         patch('Vertices',[xBox', yBox', zBox'], 'Faces',faces, ...
-              'FaceColor','none','EdgeColor','r','LineWidth',2,'LineStyle','--');
+              'FaceColor','none','EdgeColor',colour,'LineWidth',2,'LineStyle','--');
 
 end

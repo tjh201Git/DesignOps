@@ -152,7 +152,7 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     % ================================================
     if plotGraphs
         plotSurrogateAndSampleGraph(Xq, yhat, samples);
-        drawRefinementBox(refMin, refMax);
+        % drawRefinementBox(refMin, refMax);
     end
 
 
