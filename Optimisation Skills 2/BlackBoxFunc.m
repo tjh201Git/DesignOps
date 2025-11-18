@@ -134,11 +134,11 @@ minSkew = 0;
 maxSkew = 1;
 
 %ChosenFunc = @exampFunc;  
-%ChosenFunc = @rastrigin;
+ChosenFunc = @rastrigin;
 %ChosenFunc = @ackley3;
 %ChosenFunc = @sphere3;
 %ChosenFunc = @griewank3;
-ChosenFunc = @manualBlackbox;
+%ChosenFunc = @manualBlackbox;
 
 Nodes  = 30;
 
@@ -149,8 +149,8 @@ RBFsurrogateNodes = 5;
 RBFthirdSurrogateNodes = 5;
 
 optsGA = optimoptions('ga', ...  
-    'MaxGenerations', 100, ... 
-    'PopulationSize', 1000);   
+    'MaxGenerations', 1000, ... 
+    'PopulationSize', 10000);   
 
 %===========Star Discrepency Sampling Method===================
 
@@ -161,7 +161,7 @@ Dimensions  = 3;
 % set of points that is the most evenly space, which is the lowest 
 % discrepency, to use as our initial sampling design.
 
-numSets = 2000; %Try 2000 different designs
+numSets = 10000; %Try 2000 different designs
 bestSD  = inf; %Start with infinity then replace with smaller and smaller discrepency values
 bestXn  = []; %placeholder for best design
 
@@ -197,6 +197,10 @@ samples(:,3) = minSkew   + bestXn(:,3) * (maxSkew   - minSkew);  %scale
 MCSI_samples = ChosenFunc(samples,'initialize'); 
 
 %=================Plotting==========================
+
+figAll = figure('Name','All Surrogates Comparison','NumberTitle','off');
+tiledlayout(figAll, 2, 2); %one Master popup for the plotting
+
 %Now plotting the example blackbox function with the 3 variable ranges so
 %that we can compare agaisnt the surrogate model 
 %its being plotted as a point cloud because its a 4 dimensional plot
@@ -351,21 +355,21 @@ end
 yhat = Phi_q * A;                     % nq^2 x 1
 
 %==============Plotting FUll surrogate===================================
-figure('Name', 'Plot of the Surrogate Model', 'NumberTitle', 'off');
-
-scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat, 'filled');
-hold on;
-
-% Plot the samples
-%scatter3(samples(:,1), samples(:,2), samples(:,3),60, MCSI_samples, 'filled', 'MarkerEdgeColor','k');
-
-xlabel('x1 (Advert)');
-ylabel('x2 (Target)');
-zlabel('x3 (Skew)');
-title('Poly 4D Scatter of Surrogate Model (colour = predicted MCSI)');
-colorbar;
-grid on;
-view(45, 25);
+%figure('Name', 'Plot of the Surrogate Model', 'NumberTitle', 'off');
+% nexttile;
+% scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat, 'filled');
+% hold on;
+% 
+% % Plot the samples
+% %scatter3(samples(:,1), samples(:,2), samples(:,3),60, MCSI_samples, 'filled', 'MarkerEdgeColor','k');
+% 
+% xlabel('x1 (Advert)');
+% ylabel('x2 (Target)');
+% zlabel('x3 (Skew)');
+% title('Poly 4D Scatter of Surrogate Model (colour = predicted MCSI)');
+% colorbar;
+% grid on;
+% view(45, 25);
 
 %==========Optimizing! Design Space Refinement and Infill=====================
 
@@ -419,7 +423,7 @@ refMax = min(refMax, origMax);
 
 N_infill    = PolysurrogateNodes;      % number of new points to add
 Dimensions  = 3;       
-numSets_inf = 2000;     
+numSets_inf = 10000;     
 
 bestSD_inf  = inf;
 bestXn_inf  = [];
@@ -532,50 +536,50 @@ end
 yhat_new = Phi_q_new * A_new;            
 
 %========Plotting new surrogate======================
-figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'off');
-
-scatter3(Xq_new(:,1), Xq_new(:,2), Xq_new(:,3), 25, yhat_new, 'filled');
-hold on;
-
-%====================Draw refinement window=====================
-
-x1_min = refMin(1); x1_max = refMax(1);
-x2_min = refMin(2); x2_max = refMax(2);
-x3_min = refMin(3); x3_max = refMax(3);
-
-% 8 corner points of the box
-C = [ x1_min x2_min x3_min;  % 1
-      x1_max x2_min x3_min;  % 2
-      x1_max x2_max x3_min;  % 3
-      x1_min x2_max x3_min;  % 4
-      x1_min x2_min x3_max;  % 5
-      x1_max x2_min x3_max;  % 6
-      x1_max x2_max x3_max;  % 7
-      x1_min x2_max x3_max]; % 8
-
-% Faces of the box (each row indexes into C)
-faces = [1 2 3 4;  % bottom (z = min)
-         5 6 7 8;  % top    (z = max)
-         1 2 6 5;  % side x+
-         2 3 7 6;  % side y+
-         3 4 8 7;  % side x-
-         4 1 5 8]; % side y-
-
-% Plot semi-transparent refinement window
-patch('Vertices', C, 'Faces', faces, ...
-      'FaceColor', 'none', ...        % no fill, just edges OR:
-      'EdgeColor', 'r', ...
-      'LineWidth', 1.5);
-
-%==========================================================
-
-xlabel('x1 (Advert)');
-ylabel('x2 (Target)');
-zlabel('x3 (Skew)');
-title('POLY 4D Scatter of Refined Surrogate Model (colour = predicted MCSI)');
-colorbar;
-grid on;
-view(45, 25);
+%figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'off');
+% nexttile;
+% scatter3(Xq_new(:,1), Xq_new(:,2), Xq_new(:,3), 25, yhat_new, 'filled');
+% hold on;
+% 
+% %====================Draw refinement window=====================
+% 
+% x1_min = refMin(1); x1_max = refMax(1);
+% x2_min = refMin(2); x2_max = refMax(2);
+% x3_min = refMin(3); x3_max = refMax(3);
+% 
+% % 8 corner points of the box
+% C = [ x1_min x2_min x3_min;  % 1
+%       x1_max x2_min x3_min;  % 2
+%       x1_max x2_max x3_min;  % 3
+%       x1_min x2_max x3_min;  % 4
+%       x1_min x2_min x3_max;  % 5
+%       x1_max x2_min x3_max;  % 6
+%       x1_max x2_max x3_max;  % 7
+%       x1_min x2_max x3_max]; % 8
+% 
+% % Faces of the box (each row indexes into C)
+% faces = [1 2 3 4;  % bottom (z = min)
+%          5 6 7 8;  % top    (z = max)
+%          1 2 6 5;  % side x+
+%          2 3 7 6;  % side y+
+%          3 4 8 7;  % side x-
+%          4 1 5 8]; % side y-
+% 
+% % Plot semi-transparent refinement window
+% patch('Vertices', C, 'Faces', faces, ...
+%       'FaceColor', 'none', ...        % no fill, just edges OR:
+%       'EdgeColor', 'r', ...
+%       'LineWidth', 1.5);
+% 
+% %==========================================================
+% 
+% xlabel('x1 (Advert)');
+% ylabel('x2 (Target)');
+% zlabel('x3 (Skew)');
+% title('POLY 4D Scatter of Refined Surrogate Model (colour = predicted MCSI)');
+% colorbar;
+% grid on;
+% view(45, 25);
 
 %=============Minima of the refined Surrogate====================================
 
@@ -624,7 +628,7 @@ refMin3 = max(refMin3, origMin);
 refMax3 = min(refMax3, origMax);
 
 N_infill3    = PolythirdSurrogateNodes;    % number of new points to add (3rd refinement)
-numSets_inf3 = 2000;
+numSets_inf3 = 10000;
 
 bestSD_inf3  = inf;
 bestXn_inf3  = [];
@@ -730,9 +734,10 @@ end
 
 yhat_third = Phi_q3 * A_third;
 
-figure('Name', 'Third Refined Surrogate (zoom = 0.3)', 'NumberTitle', 'off');
-scatter3(Xq_third(:,1), Xq_third(:,2), Xq_third(:,3), 25, yhat_third, 'filled');
-hold on;
+%figure('Name', 'Third Refined Surrogate (zoom = 0.3)', 'NumberTitle', 'off');
+% nexttile;
+% scatter3(Xq_third(:,1), Xq_third(:,2), Xq_third(:,3), 25, yhat_third, 'filled');
+% hold on;
 
 %Quality of Fit for the Third Surrogate
 yhatLOO_third = zeros(N_third,1);
@@ -782,10 +787,24 @@ f_sur_third = @(x) ...
 fprintf('3rd Surrogate GA min at [%.3f, %.3f, %.3f]\n', xGA_third(1), xGA_third(2), xGA_third(3));
 fprintf('  Surrogate MCSI (3rd) = %.4f\n', fGA_third);
 
-%==============Plotting final surrogate with refined window======================
-figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'off');
+polyMinima = [xGA_third(1); xGA_third(2); xGA_third(3)];
 
+%==============Plotting final surrogate with refined window======================
+%figure('Name', 'Plot of the New Surrogate (with Refinement)', 'NumberTitle', 'off');
+nexttile;
 scatter3(Xq_third(:,1), Xq_third(:,2), Xq_third(:,3), 25, yhat_third, 'filled');
+hold on;
+plot3(polyMinima(1), polyMinima(2), polyMinima(3), ...
+      'rp', 'MarkerSize', 18, 'MarkerFaceColor', 'y', 'DisplayName','Poly Minima');
+
+minLabel = sprintf('Minima:(%.2f, %.2f, %.2f), Polynomial Order: %.2f, LOOV Percentage Error: %.2f%%', ...
+                   polyMinima(1), polyMinima(2), polyMinima(3),BestOrder,errorPercent_third);
+
+text(polyMinima(1), polyMinima(2), polyMinima(3), ...
+     minLabel, ...
+     'HorizontalAlignment','left', ...
+     'VerticalAlignment','bottom', ...
+     'FontWeight','bold');
 hold on;
 
 %====================Draw refinement window=====================
@@ -857,7 +876,8 @@ grid on;
 view(45, 25);
 
 %===============Plot the Original MCSI samples VS the NEW=============================
-figure('Name', 'Original Samples Vs Refined1 and Refined2', 'NumberTitle', 'off');
+%figure('Name', 'Original Samples Vs Refined1 and Refined2', 'NumberTitle', 'off');
+nexttile;
 hold on;
 
 % --- Original samples (all initial star discrepancy points) ---
@@ -936,23 +956,24 @@ for i = 1:Nq
     yhat_RBF(i) = psi_i' * W_RBF;                     % scalar
 end
 
-figure('Name','RBF Surrogate Model','NumberTitle','off');
-scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_RBF, 'filled');
-hold on;
-
-% Optionally overlay the actual sample points:
-scatter3(samples(:,1), samples(:,2), samples(:,3), ...
-         60, MCSI_samples, 'o', 'MarkerEdgeColor','k', ...
-         'MarkerFaceColor','w');
-
-xlabel('x1 (Advert)');
-ylabel('x2 (Target)');
-zlabel('x3 (Skew)');
-title('RBF 4D Scatter of RBF Surrogate (colour = predicted MCSI)');
-colorbar;
-grid on;
-view(45,25);
-hold off;
+%figure('Name','RBF Surrogate Model','NumberTitle','off');
+% nexttile;
+% scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_RBF, 'filled');
+% hold on;
+% 
+% % Optionally overlay the actual sample points:
+% scatter3(samples(:,1), samples(:,2), samples(:,3), ...
+%          60, MCSI_samples, 'o', 'MarkerEdgeColor','k', ...
+%          'MarkerFaceColor','w');
+% 
+% xlabel('x1 (Advert)');
+% ylabel('x2 (Target)');
+% zlabel('x3 (Skew)');
+% title('RBF 4D Scatter of RBF Surrogate (colour = predicted MCSI)');
+% colorbar;
+% grid on;
+% view(45,25);
+% hold off;
 
 %==================Optimize!================================================
 
@@ -982,7 +1003,7 @@ refMaxRBF = min(refMaxRBF, origMax);
 
 N_infill_RBF    = RBFsurrogateNodes;  % 5 new nodes inside the refined space
 Dimensions      = 3;
-numSets_inf_RBF = 2000;
+numSets_inf_RBF = 10000;
 
 bestSD_inf_RBF  = inf; %Dstar!
 bestXn_inf_RBF  = [];
@@ -1067,7 +1088,7 @@ refMaxRBF2 = min(refMaxRBF2, origMax);
 
 N_infill_RBF2    = RBFthirdSurrogateNodes;   % 5 new nodes
 Dimensions       = 3;
-numSets_inf_RBF2 = 2000;
+numSets_inf_RBF2 = 10000;
 
 bestSD_inf_RBF2  = inf;
 bestXn_inf_RBF2  = [];
@@ -1148,9 +1169,9 @@ minM3 = min(MCSI_samples_RBF_third);
 maxM3 = max(MCSI_samples_RBF_third);
 rangeM3 = maxM3 - minM3;
 
-errorPercent_third = (RMSE_LOO_third / rangeM3)*100;
+errorPercentrbf_third = (RMSE_LOO_third / rangeM3)*100;
 
-fprintf('LOOCV Error For THIRD RBF Refined Surrogate = %.4f (%.2f%% of MCSI range)\n',RMSE_LOO_third, errorPercent_third);
+fprintf('LOOCV Error For THIRD RBF Refined Surrogate = %.4f (%.2f%% of MCSI range)\n',RMSE_LOO_third, errorPercentrbf_third);
 
 
 %================Find the Minima based on GA and FUll surrogate=================================
@@ -1166,8 +1187,25 @@ xRBF_opt3 = min(xRBF_opt3, origMax);
 
 fprintf('Second Refined RBF surrogate GA min at [%.3f, %.3f, %.3f], surrogate = %.4f\n', xRBF_opt3(1), xRBF_opt3(2), xRBF_opt3(3), fRBF_opt3);
 
-figure('Name','Third RBF Surrogate (Second Refinement)','NumberTitle','off');
+rbfMinima = [xRBF_opt3(1); xRBF_opt3(2); xRBF_opt3(3)];
+
+%figure('Name','Third RBF Surrogate (Second Refinement)','NumberTitle','off');
+nexttile;
 scatter3(Xq_RBF_third(:,1), Xq_RBF_third(:,2), Xq_RBF_third(:,3), 25, yhat_RBF_third, 'filled');
+hold on;
+plot3(rbfMinima(1), rbfMinima(2), rbfMinima(3), ...
+      'rp', 'MarkerSize', 18, 'MarkerFaceColor', 'y', 'DisplayName','Poly Minima');
+
+minLabel = sprintf('Minima:(%.2f, %.2f, %.2f), LOOV Percentage Error: %.2f%%', ...
+                   rbfMinima(1), rbfMinima(2), rbfMinima(3),errorPercentrbf_third);
+
+text(rbfMinima(1), rbfMinima(2), rbfMinima(3), ...
+     minLabel, ...
+     'HorizontalAlignment','left', ...
+     'VerticalAlignment','bottom', ...
+     'FontWeight','bold');
+
+
 hold on;
 
 %====================Draw refinement window=====================
@@ -1240,7 +1278,8 @@ view(45,25);
 hold off;
 
 %===============Plot the Original MCSI samples VS the NEW=============================
-figure('Name', 'RBF Original Samples Vs Refined1 and Refined2', 'NumberTitle', 'off');
+%figure('Name', 'RBF Original Samples Vs Refined1 and Refined2', 'NumberTitle', 'off');
+nexttile;
 hold on;
 
 % --- Original samples (all initial star discrepancy points) ---

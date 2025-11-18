@@ -1,4 +1,4 @@
-function output = rastrigin(x)
+function output = rastrigin(x,stage)
 A = 10;
 n = size(x,2);                   
 output = A * n + sum(x.^2 - A .* cos(2*pi.*x), 2);
