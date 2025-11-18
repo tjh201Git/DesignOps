@@ -61,12 +61,12 @@ tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
 samples = [samples; tempSamplePoints];
 
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
-temp_mcsi_values = blackBoxFunc(tempSamplePoints); % or take interactive samples
+temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
 mcsi_values = [mcsi_values; temp_mcsi_values];
 
 zoomFactor = 0.6;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName2");
-[refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Refined Zone");
+[refMin, refMax] = fitSurrogateAndZoomArea(samples, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Refined Zone");
 
 
 figAll3 = figure('Name','All Surrogates Comparison','NumberTitle','off');
@@ -81,9 +81,9 @@ tempSamplePoints = denormaliseMatrix(pointsMatrix, minVariables, maxVariables);
 samples = [samples; tempSamplePoints];
 
 % [samples, mcsi_values] = manualInputBlackbox(filename, tempSamplePoints);
-temp_mcsi_values = blackBoxFunc(tempSamplePoints); % or take interactive samples
+temp_mcsi_values = blackBoxFunc(samples); % or take interactive samples
 mcsi_values = [mcsi_values; temp_mcsi_values];
 
 zoomFactor = 0.4;
 % [refMin, refMax] = fitSurrogateAndZoomArea(samples, mcsi_values, zoomFactor, true, "testStageName3");
-[refMin, refMax] = fitSurrogateAndZoomArea(tempSamplePoints, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone");
+[refMin, refMax] = fitSurrogateAndZoomArea(samples, temp_mcsi_values, zoomFactor, true, "Additional 5 Nodes in Further Refined Zone");

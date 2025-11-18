@@ -73,4 +73,8 @@ function plotSurrogateAndSampleGraph(surrogatePoints, yhat, samplePoints, stageN
         ylim([0 60])
         zlim([0 1]);
 
+        if (strcmpi(surrogateType, 'poly'))
+            nexttile
+        end
+
 end
