@@ -22,7 +22,7 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
 
     x1 = X_norm(:,1); x2 = X_norm(:,2); x3 = X_norm(:,3);
 
-    optsGA = optimoptions('ga', 'MaxGenerations', 100, 'PopulationSize', 1000);
+    optsGA = optimoptions('ga', 'MaxGenerations', 10000, 'PopulationSize', 10000);
 
     % ================================================
     % ======= Polynomial Surrogate ==================
@@ -150,7 +150,7 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     % Clip within original bounds
     xSur_opt_poly = max(xSur_opt_poly, Xmin);
     xSur_opt_poly = min(xSur_opt_poly, Xmax);
-    fprintf("Best guess according to surrogate: MSCI = %.4f @ (%.4f %.4f %.4f)\n", f_opt_poly, xSur_opt_poly);
+    fprintf("Best guess according to Poly surrogate: MSCI = %.4f @ (%.4f %.4f %.4f)\n", f_opt_poly, xSur_opt_poly);
 
     % ================================================
     % ======= Zoom Refinement =======================
@@ -171,7 +171,7 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     % Clip within original bounds
     xSur_opt_rbf = max(xSur_opt_rbf, Xmin);
     xSur_opt_rbf = min(xSur_opt_rbf, Xmax);
-    fprintf("Best guess according to surrogate: MSCI = %.4f @ (%.4f %.4f %.4f)\n", f_opt_rbf, xSur_opt_rbf);
+    fprintf("Best guess according to RBF surrogate: MSCI = %.4f @ (%.4f %.4f %.4f)\n", f_opt_rbf, xSur_opt_rbf);
 
     % ================================================
     % ======= Zoom Refinement =======================
@@ -198,9 +198,9 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     plot3(xSur_opt_poly(1), xSur_opt_poly(2), xSur_opt_poly(3), ...
     'rp', 'MarkerSize', 18, 'MarkerFaceColor', 'y', 'DisplayName','Poly Minima');
 
-
-    minLabel = sprintf('Minima:(%.2f, %.2f, %.2f), Best Order:%f LOOV Percentage Error: %.1f%%,', ...
-           xSur_opt_poly(1), xSur_opt_poly(2), xSur_opt_poly(3), BestOrder, errorPercent);           
+    minLabel = sprintf('Global Minima'); 
+   % minLabel = sprintf('Minima:(%.2f, %.2f, %.2f), Best Order:%f LOOV Percentage Error: %.1f%%,', ...
+         %  xSur_opt_poly(1), xSur_opt_poly(2), xSur_opt_poly(3), BestOrder, errorPercent);           
 
     text(xSur_opt_poly(1), xSur_opt_poly(2), xSur_opt_poly(3), ...
     minLabel, ...
@@ -231,8 +231,9 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     'rp', 'MarkerSize', 18, 'MarkerFaceColor', 'y', 'DisplayName','Poly Minima');
 
 
-    minLabel = sprintf('Minima:(%.2f, %.2f, %.2f)', ...
-           xSur_opt_rbf(1), xSur_opt_rbf(2), xSur_opt_rbf(3));           
+    minLabel = sprintf('Global Minima'); 
+    % minLabel = sprintf('Minima:(%.2f, %.2f, %.2f)', ...
+    %       xSur_opt_rbf(1), xSur_opt_rbf(2), xSur_opt_rbf(3));           
 
     text(xSur_opt_rbf(1), xSur_opt_rbf(2), xSur_opt_rbf(3), ...
     minLabel, ...
