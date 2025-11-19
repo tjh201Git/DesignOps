@@ -9,6 +9,11 @@ function funcs = makeEngFuncs
     funcs.applySecondMomentOffset = @applySecondMomentOffset;
     funcs.findAerofoilHeight = @findAerofoilHeight;
     funcs.findVolumeSkinThicknessGradient = @findVolumeSkinThicknessGradient;
+
+
+    funcs.secondMomentAreaArraySkinThicknessQuadratic = @secondMomentAreaArraySkinThicknessQuadratic;
+    funcs.findVolumeSkinThicknessQuadratic = @findVolumeSkinThicknessQuadratic;
+    funcs.getThicknessAtDistanceFromQuadraticLine = @getThicknessAtDistanceFromQuadraticLine;
 end
 % Plot the aerofoil profile
 % clc, clear all, close all
@@ -64,7 +69,7 @@ function area = findSolidCrossSectionalArea(chord)
 end
 
 function bending_stress = bendingStress(moment, dist_from_netural_axis, second_moment_area)
-    bending_stress = moment * dist_from_netural_axis ./ second_moment_area;
+    bending_stress = moment .* dist_from_netural_axis ./ second_moment_area;
 end
 
 function differential = findAerofoilHeightDifferential(x)
@@ -191,4 +196,46 @@ end
 function secondMomentArea = applySecondMomentOffset(localSecondMomentArea, area, distanceFromNeutralAxis)
 
     secondMomentArea = localSecondMomentArea + area .* distanceFromNeutralAxis.^2;
+end
+
+
+
+
+
+
+
+
+%% ---------------- Quadratic Thickness Helper Functions ----------------
+
+function thickness = getThicknessAtDistanceFromQuadraticLine(distance, a, b, c)
+    % Compute quadratic thickness at a given distance
+    tempThickness = a + b * distance + c * distance.^2;
+    % enforce non-negative thickness
+    positiveThickness = max(0, tempThickness);
+    % optional: limit thickness to root thickness (like in linear version)
+    thickness = min(positiveThickness, a);
+end
+
+
+function volume = findVolumeSkinThicknessQuadratic(chord, a, b, c)
+    % Compute total skin volume by integrating cross-sectional area along chord
+    volume = integral(@getAreaAtDistance, 0, chord);
+
+    function area = getAreaAtDistance(x)
+        thickness = getThicknessAtDistanceFromQuadraticLine(x, a, b, c);
+        area = approxCrossSectAreaSkinMethod(thickness, chord);
+    end
+end
+
+
+function secondMomentAreaArray = secondMomentAreaArraySkinThicknessQuadratic(N, chord, a, b, c)
+    % Compute second moment of area array for N segments along chord
+    chunkDist = chord / N;
+    secondMomentAreaArray = zeros(1,N);  % preallocate
+
+    for i = 1:N
+        zpos = chunkDist * (i - 1);
+        thickness = getThicknessAtDistanceFromQuadraticLine(zpos, a, b, c);
+        secondMomentAreaArray(i) = findSecondMomentAreaSkinMethod(chord, thickness);
+    end
 end

@@ -20,8 +20,8 @@ N = 100;
 targetStress = 30e6; % Pa (30 MPa)
 
 % Search bounds for thickness (m)
-t_low = 0.0001;  % 0.1 mm
-t_high = 0.1;   % 100 mm
+t_low = 0.00005;  
+t_high = 0.01;   
 
 % Run binary search
 [t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, engFuncs, N, targetStress);
@@ -35,20 +35,70 @@ iters = 1:iters_num;
 fig = figure;
 theme(fig, "light");
 
-subplot(3,1,1);
-plot(iters, history.t,'ko-', 'Color', 'g'); %plot the deflection (delta) at each node location across the blade
-xlabel('iterations'); %set labels
-ylabel('thickness');
+% --- Left Y-Axis (Thickness) ---
+yyaxis left;
+plot(iters, history.t, 'o-'); % Plot Thickness
+xlabel('Iterations, N');
+ylabel('Thickness, t');
 
-subplot(3,1,2);
-plot(history.maxStress, history.t, 'ko-', 'Color', 'r');
-xlabel('Bending Stress, MPa');
-ylabel('thickness');
+% --- Right Y-Axis (Volume) ---
+yyaxis right;
+plot(iters, history.volume, '*-'); % Plot Volume
+% Set the right y-axis label to 'Volume, m^3' using the LaTeX interpreter
+ylabel('Volume, m$^3$', 'Interpreter', 'latex');
+title("Binary Search For Smallest Uniform Thickness")
+% Determine the min/max limits for the volume data
+% V_min = min(history.volume);
+% V_max = max(history.volume);
 
-subplot(3,1,3);
-plot(history.volume, history.t, 'ko-', 'Color', 'b');
-xlabel('volume');
-ylabel('thickness');
+% Apply these limits to the right y-axis scale.
+% This automatically maps the left y-axis's plot range to the
+% corresponding volume range on the right.
+% ylim([V_min, V_max]);
+
+
+finalThickness = history.t(end);
+% Compute volume using your engineering function
+finalVolume = engFuncs.findVolumeSkinMethod(chord, finalThickness);
+
+% Compute second moment of area
+final_I = engFuncs.findSecondMomentAreaSkinMethod(chord, finalThickness);
+I_array = final_I .* ones(1, N);
+
+% Run beam bending solver
+[~, M, ~, ~, ~] = beamBending(N, I_array);
+
+% Distance from neutral axis 
+y = 0.12 * chord;
+
+% Compute bending stresses
+finalStresses = engFuncs.bendingStress(M, y, I_array);
+finalStresses = finalStresses / 1e6;
+
+lin = linspace(0,1,N);
+
+myColourMap = flipud(jet(N));
+
+
+fig2 = figure;
+theme(fig2, "light");
+% Plot points and color them based on their index (which is linear)
+hold on
+plot(lin, finalStresses, 'black');
+scatter(lin, finalStresses, 30, lin, 'filled'); % 30 is the marker size, lin maps the color
+% colorbar; % Display the color bar
+
+% Apply your colormap and labels
+colormap(flipud(jet(N)));
+title("Bending Stress Along Aerofoil, Uniform Thickness 2.382mm")
+xlabel('Normalised Radial position, r/R');
+ylabel('Bending Stress, MPa');
+% subplot(3,1,3);
+% plot(history.volume, history.t, 'ko-', 'Color', 'b');
+% xlabel('volume');
+% ylabel('thickness');
+
+hold off
 
 function [t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, engFuncs, beamN, targetStress, tol)
 % findOptimalThicknessBinary
@@ -117,7 +167,7 @@ function [maxStress, volume] = evaluateThickness(t, chord, engFuncs, N)
 
     % Compute second moment of area
     I = engFuncs.findSecondMomentAreaSkinMethod(chord, t)
-    I_array = I * ones(N, 1);
+    I_array = I * ones(1, N);
 
     % Run beam bending solver
     [~, M, ~, ~, ~] = beamBending(N, I_array);
@@ -126,7 +176,7 @@ function [maxStress, volume] = evaluateThickness(t, chord, engFuncs, N)
     y = 0.12 * chord;
 
     % Compute bending stresses
-    stresses = engFuncs.bendingStress(M, y, I);
+    stresses = engFuncs.bendingStress(M, y, I_array);
 
     % Return the maximum absolute bending stress
     maxStress = max(abs(stresses));
