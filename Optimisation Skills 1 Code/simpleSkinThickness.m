@@ -13,6 +13,7 @@ yield_strength = 30e6;
 
 
 % --- Parameters
+span = 1.5;
 chord = 0.15;
 dist_from_neutral_axis = 0.12*chord;
 
@@ -24,7 +25,7 @@ t_low = 0.00005;
 t_high = 0.01;   
 
 % Run binary search
-[t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, engFuncs, N, targetStress);
+[t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, span, engFuncs, N, targetStress);
 
 % fprintf('\nFinal optimal thickness = %.6e m (%.3f mm)\n', t_opt, t_opt*1e3);
 % fprintf('\nFinal ')
@@ -37,9 +38,11 @@ theme(fig, "light");
 
 % --- Left Y-Axis (Thickness) ---
 yyaxis left;
-plot(iters, history.t, 'o-'); % Plot Thickness
+thicknessMM = history.t * 1000;
+plot(iters, thicknessMM, 'o-'); % Plot Thickness
 xlabel('Iterations, N');
-ylabel('Thickness, t');
+ylabel('Thickness, mm');
+xlim([1, iters_num]);
 
 % --- Right Y-Axis (Volume) ---
 yyaxis right;
@@ -59,7 +62,7 @@ title("Binary Search For Smallest Uniform Thickness")
 
 finalThickness = history.t(end);
 % Compute volume using your engineering function
-finalVolume = engFuncs.findVolumeSkinMethod(chord, finalThickness);
+finalVolume = engFuncs.findVolumeSkinMethod(chord, finalThickness, span);
 
 % Compute second moment of area
 final_I = engFuncs.findSecondMomentAreaSkinMethod(chord, finalThickness);
@@ -100,7 +103,7 @@ ylabel('Bending Stress, MPa');
 
 hold off
 
-function [t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, engFuncs, beamN, targetStress, tol)
+function [t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, span, engFuncs, beamN, targetStress, tol)
 % findOptimalThicknessBinary
 % Uses binary search to find the minimum skin thickness such that
 % max bending stress <= targetStress.
@@ -118,8 +121,8 @@ function [t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, eng
 %   t_opt   - optimal thickness (m)
 %   history - struct containing all iteration data
 
-    if nargin < 7
-        tol = 1e-5; % default thickness tolerance (m)
+    if nargin < 8
+        tol = 1e-6; % default thickness tolerance (m)
     end
 
     maxIter = 100;
@@ -133,7 +136,7 @@ function [t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, eng
         iter = iter + 1;
         t_mid = 0.5 * (t_low + t_high);
 
-        [maxStress_mid, volume_mid] = evaluateThickness(t_mid, chord, engFuncs, beamN);
+        [maxStress_mid, volume_mid] = evaluateThickness(t_mid, chord, span, engFuncs, beamN);
 
         history.t(end+1) = t_mid;
         history.maxStress(end+1) = maxStress_mid;
@@ -147,7 +150,7 @@ function [t_opt, history] = findOptimalThicknessBinary(t_low, t_high, chord, eng
             t_high = t_mid;
         end
 
-        fprintf("Iter %2d: t = %.6e m (%.3f mm), maxStress = %.3e Pa, volume = %.3e M^3 \n",  ...
+        fprintf("Iter %2d: t = %.6e m (%.3f mm), maxStress = %.3e Pa, volume = %.10e M^3 \n",  ...
                 iter, t_mid, t_mid*1e3, maxStress_mid, volume_mid);
     end
 
@@ -160,10 +163,10 @@ end
 
 
 %% Helper function to compute stress and volume for given thickness
-function [maxStress, volume] = evaluateThickness(t, chord, engFuncs, N)
+function [maxStress, volume] = evaluateThickness(t, chord, span, engFuncs, N)
 
     % Compute volume using your engineering function
-    volume = engFuncs.findVolumeSkinMethod(chord, t);
+    volume = engFuncs.findVolumeSkinMethod(chord, t, span);
 
     % Compute second moment of area
     I = engFuncs.findSecondMomentAreaSkinMethod(chord, t)

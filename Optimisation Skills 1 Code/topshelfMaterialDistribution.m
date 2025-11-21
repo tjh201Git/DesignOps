@@ -14,50 +14,6 @@ heightRatio = 0.12;
 maxPositiveHeight = chord*heightRatio/2;
 
 
-
-% xPosMaxHeight = findXPosMaxHeight(engFuncs);
-
-
-
-% now do binary search to find x pos start and end at certain height offset
-% from neutral axis
-
-% binary_search_tolerance = 0.00001;
-% binary_search_max_iterations = 1000;
-
-% Perform binary search to find the x positions corresponding to the shelf height
-% xstart = findXPosAtHeightBinarySearch(engFuncs, shelfHeight, 0, xPosMaxHeight, binary_search_tolerance, binary_search_max_iterations)
-% xend = findXPosAtHeightBinarySearch(engFuncs, shelfHeight, xPosMaxHeight, chord, binary_search_tolerance, binary_search_max_iterations)
-
-% h1 = engFuncs.findAerofoilPositiveHeight(xpos_start)
-% h2 = engFuncs.findAerofoilPositiveHeight(xpos_end)
-
-% topShelfArea = findTopShelfArea(engFuncs, xstart, xend, shelfHeight)
-% 
-% topShelfSecondMomentArea = findTopShelfSecondMomentArea(xstart,xend, 1000, shelfHeight, engFuncs)
-
-% maxsecondmomentarea = findTopShelfSecondMomentArea(0,chord, 0, 1000,  engFuncs)
-
-
-% function secondMomentArea = findTopShelfSecondMomentArea(xstart, xend, shelfHeight, slices, engFuncs)
-% 
-%     dx = (xend - xstart) / slices;
-%     dxoffset = dx/2;
-%     xvals = xstart + dxoffset:dx:xend - dxoffset;
-% 
-%     aeroHeights = engFuncs.findAerofoilPositiveHeight(xvals);
-%     rectHeights = aeroHeights - shelfHeight;
-%     rectWidth = dx;
-%     localSecondMomentAreas = engFuncs.secondMomentAreaRectangle(rectWidth, rectHeights);
-% 
-%     rectArea = rectWidth * rectHeights;
-%     rectMidpointHeight = shelfHeight + rectHeights / 2
-%     secondMomentAreaParts = engFuncs.applySecondMomentOffset(localSecondMomentAreas, rectArea, rectMidpointHeight)
-% 
-%     secondMomentArea = sum(secondMomentAreaParts) * 2 % mult by two for top and bottom of aerofoil
-% 
-% end
-
 function I = findTopShelfSecondMomentArea(engFuncs, shelfHeight, xstart, xend, slices)
 
     dx = (xend - xstart)/slices;
@@ -242,29 +198,117 @@ hold on
 lin = linspace(0,chord, idealSMAsLength);
 yt = engFuncs.findAerofoilPositiveHeight(lin);
 
+% function area = findShelfInfillArea(xstart, xend, shelfHeight)
+% 
+% 
+%     function height = findHeightPart(x)
+% 
+%     end
+% end
 
 
-colors = parula(idealSMAsLength)
+
+% colors = parula(idealSMAsLength);
+
+idealxstarts = zeros(1, idealSMAsLength);
+idealxends = zeros(1, idealSMAsLength);
 
 for i = 1:idealSMAsLength
     idealHeight = findShelfHeightForTargetSMA(engFuncs, idealSMAs(i));
+    
+
+
     idealShelfHeights(i) = idealHeight;
     [xstart, xend] = findShelfSpan(engFuncs, idealHeight, chord, xPosMaxHeight);
-    
-plot([xstart, xend], [idealHeight, idealHeight], ...
-         'Color', colors(i,:), ...
-         'LineWidth', 1.0, ...
-         'DisplayName', sprintf('Distance %d', lin(i)));
+    idealxstarts(i) = xstart;
+    idealxends(i) = xend;
 
-plot([xstart, xend], [-idealHeight, -idealHeight], ...
-         'Color', colors(i,:), ...
-         'LineWidth', 1.0, ...
-         'DisplayName', sprintf('Distance %d', lin(i)));
+
+plot([xstart, xend], [idealHeight, idealHeight], 'black');
+
+plot([xstart, xend], [-idealHeight, -idealHeight], 'black');
+end
+% --- VOLUME CALCULATION START ---
+cumulativeVolume = 0;
+nodeDist = chord / (idealSMAsLength - 1);
+
+for i = 1:idealSMAsLength-1
+    h0 = idealShelfHeights(i);
+    h1 = idealShelfHeights(i+1);
+    
+    % FIX 1: Adjust distances to start from 0, not nodeDist
+    d0 = nodeDist * (i - 1);
+    d1 = nodeDist * i;
+    
+    gradient = (h1 - h0) / nodeDist;
+    
+    cumulativeVolume = cumulativeVolume + findCumVolumePart(engFuncs, h0, gradient, d0, d1, chord, xPosMaxHeight);
+end
+cumulativeVolume = cumulativeVolume * 2;
+fprintf("VOLUME: %.10f\n", cumulativeVolume);
+
+function cumVolumePart = findCumVolumePart(engFuncs, h0, gradient, d0, d1, chord, xPosMaxHeight)
+    
+    cumVolumePart = integral(@volBetweenNodes, d0, d1);
+    
+    function areaPart = volBetweenNodes(x)
+        % Preallocate output for vectorization
+        areaPart = zeros(size(x));
+        
+        for k = 1:numel(x)
+            xi = x(k);
+            
+            % FIX 2: Subtract d0 from xi.
+            % We want the change in height relative to the start of this segment.
+            tempHeight = h0 + gradient * (xi - d0);
+            
+            [xstart, xend] = findShelfSpan(engFuncs, tempHeight, chord, xPosMaxHeight);
+            
+            % Calculate area (ensure it doesn't crash if area is empty)
+            if xend > xstart
+                areaPart(k) = findTopShelfArea(engFuncs, xstart, xend, tempHeight);
+            else
+                areaPart(k) = 0;
+            end
+        end
+    end
 end
 
 
+% --- VOLUME CALCULATION (Simplified Slab Method) ---
+cumulativeVolume = 0;
+nodeDist = chord / (idealSMAsLength - 1);
+
+% Loop through nodes (stop at Length-1 because there are N-1 segments)
+for i = 1:idealSMAsLength-1
+    
+    % 1. Get the parameters calculated in your previous loop
+    h = idealShelfHeights(i);
+    xs = idealxstarts(i);
+    xe = idealxends(i);
+    
+    % 2. Calculate the cross-sectional area for this slice
+    % Note: We use the static height 'h', no gradients.
+    sliceArea = findTopShelfArea(engFuncs, xs, xe, h);
+    
+    % 3. Add the slab volume (Area * Thickness)
+    cumulativeVolume = cumulativeVolume + (sliceArea * nodeDist);
+end
+cumulativeVolume = cumulativeVolume * 2;
+
+fprintf("VOLUME: %.10f\n", cumulativeVolume);
+
+
+
+% radialPos = linspace(0,1,idealSMAsLength);
+
 plot(lin, yt, "Color", "black");
 plot(lin, -yt, "Color", "black");
+box off
+axis off
+
+% xlabel("Position along chord, m")
+% ylabel("Height of Aerofoil section")
 
 ylim([-0.075,0.075])
 
@@ -278,7 +322,7 @@ grid on
 colors = parula(idealSMAsLength);
 
 % Scale SMA Index to 0 → 1.5 m
-SMAspan = linspace(0, 1.5, idealSMAsLength);
+SMAspan = linspace(0, 1, idealSMAsLength);
 
 %% -------------------------
 % 1. Plot shelf lines in 3D
@@ -287,7 +331,10 @@ SMAspan = linspace(0, 1.5, idealSMAsLength);
 for i = 1:idealSMAsLength
 
     idealHeight = idealShelfHeights(i);           % use actual height
+    % idealHeight = idealHeight * 1000;
     [xstart, xend] = findShelfSpan(engFuncs, idealHeight, chord, xPosMaxHeight);
+    % xstart = xstart*1000;
+    % xend = xend*1000;
 
     % Positive shelf height
     plot3([xstart xend], [SMAspan(i) SMAspan(i)], [idealHeight idealHeight], ...
@@ -322,10 +369,10 @@ surf(Xaf, Yaf, Zlower, ...
 % Labels, limits, and view
 %% ----------------------------------
 
-xlabel('Chord Position (x)')
-ylabel('Span (m)')
-zlabel('Height (m)')
-title('3D Shelf Lines + Aerofoil Shape Along Span 0 → 1.5 m')
+xlabel('Position along chord, m')
+ylabel('Normalised Radial Position, r/R')
+zlabel('Height, m')
+title('Ideal Shelf Heights for Target Stress Along Aerofoil')
 
 colormap(parula(idealSMAsLength))
 % zlim([-max(abs(idealShelfHeights)), max(abs(idealShelfHeights))]) % auto scale height

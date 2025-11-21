@@ -6,6 +6,7 @@ engFuncs = makeEngFuncs;
 
 % --- Fixed Parameters ---
 chord = 0.15;
+span = 1.5;
 dist_from_neutral_axis = 0.12 * chord;
 N = 100;
 targetStress = -30e6; % Pa
@@ -25,10 +26,10 @@ lb = [t0_min, g_min];
 ub = [t0_max, g_max];
 
 % --- Objective Function Handle ---
-objective = @(X) objectiveFunction(X, chord, dist_from_neutral_axis, N, targetStress, penaltyFactor, engFuncs);
+objective = @(X) objectiveFunction(X, chord, span, dist_from_neutral_axis, N, targetStress, penaltyFactor, engFuncs);
 
 % --- Optimisation Options ---
-options = optimset('Display','iter', 'TolX',1e-4, 'TolFun',1e-6);
+options = optimset('Display','iter', 'TolX',1e-3, 'TolFun',1e-4);
 
 % --- Run Bounded Nelder-Mead ---
 [X_opt, fval] = fminsearchbnd(objective, X0, lb, ub, options);
@@ -38,7 +39,7 @@ startThickness_opt = X_opt(1);
 gradient_opt = X_opt(2);
 
 % --- Recompute final design ---
-[maxStress_opt, volume_opt] = evaluateDesign(startThickness_opt, gradient_opt, chord, dist_from_neutral_axis, N, engFuncs);
+[maxStress_opt, volume_opt] = evaluateDesign(startThickness_opt, gradient_opt, chord, span, dist_from_neutral_axis, N, engFuncs);
 
 fprintf('\n*** Optimization Complete ***\n');
 fprintf('Optimal Start Thickness: %.4f m\n', startThickness_opt);
@@ -54,11 +55,13 @@ theme(gcf, "light");
 
 subplot(2,1,1);
 dists = linspace(0,1,N);
-thicknesses = startThickness_opt + dists * gradient_opt;
+spans = linspace(0,span,N);
+thicknesses = startThickness_opt + spans * gradient_opt;
 
+thicknesses = thicknesses * 1000;
 plot(dists, thicknesses, 'LineWidth', 2);
 xlabel('Normalised Radial position, r/R');
-ylabel('Thickness, t');
+ylabel('Thickness, mm');
 title("Optimised (Nelder-Mead) First Order Polynomial Thickness Over Aerofoil");
 
 
@@ -71,6 +74,7 @@ hold on;
 plot(dists, abs(bendingStresses_opt)/1e6, 'b-', 'LineWidth', 2);
 line([0,1], [abs(targetStress)/1e6, abs(targetStress)/1e6], 'Color','r','LineStyle','--');
 
+title("Absolute Bending Stress Over Aerofoil Span")
 xlabel('Normalised Radial position, r/R');
 ylabel('Bending Stress, MPa');
 legend('Computed |Stress|', 'Target Stress (30 MPa)', 'Location', 'best');
@@ -80,7 +84,7 @@ hold off;
 
 
 %% ---------------- Objective Function ----------------
-function [f, maxStress, volume] = objectiveFunction(X, chord, dist_from_neutral_axis, N, targetStress, penaltyFactor, engFuncs)
+function [f, maxStress, volume] = objectiveFunction(X, chord, span, dist_from_neutral_axis, N, targetStress, penaltyFactor, engFuncs)
 
     startThickness = X(1);
     gradient       = X(2);
@@ -93,7 +97,7 @@ function [f, maxStress, volume] = objectiveFunction(X, chord, dist_from_neutral_
     end
 
     % Evaluate design
-    [maxStress, volume] = evaluateDesign(startThickness, gradient, chord, dist_from_neutral_axis, N, engFuncs);
+    [maxStress, volume] = evaluateDesign(startThickness, gradient, chord, span, dist_from_neutral_axis, N, engFuncs);
 
     % stress magnitude comparison
     targetMag = abs(targetStress);
@@ -119,10 +123,10 @@ end
 
 
 %% ---------------- Evaluate Design ----------------
-function [maxStress, volume] = evaluateDesign(startThickness, gradient, chord, dist_from_neutral_axis, N, engFuncs)
+function [maxStress, volume] = evaluateDesign(startThickness, gradient, chord, span, dist_from_neutral_axis, N, engFuncs)
 
     % enforce t >= 0 everywhere
-    if startThickness + gradient*chord < 0
+    if startThickness + gradient*span < 0
         maxStress = Inf;
         volume = Inf;
         return
@@ -136,7 +140,7 @@ function [maxStress, volume] = evaluateDesign(startThickness, gradient, chord, d
         return;
     end
 
-    volume = engFuncs.findVolumeSkinThicknessGradient(chord, startThickness, gradient);
+    volume = engFuncs.findVolumeSkinThicknessGradient(chord, startThickness, gradient, span);
 
     [~, M, ~, ~, ~] = beamBending(N, I_array);
 

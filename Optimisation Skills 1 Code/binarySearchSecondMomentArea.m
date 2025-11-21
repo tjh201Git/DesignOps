@@ -26,7 +26,7 @@ fig = figure;
 theme(fig, "light");
 
 % x-axis = spanwise or chordwise locations
-lin = linspace(0, radius, N);
+lin = linspace(0, 1, N);
 
 subplot(2,1,1);
 hold on
@@ -49,9 +49,10 @@ plot(lin, history.stresses(end,:), ...
      'k', 'LineWidth', 2.0, ...
      'DisplayName', 'Final Converged');
 
-xlabel("Spanwise Position (m)");
-ylabel("Bending Stress (MPa)");
-title("Stress Distribution Convergence using Binary Search");
+% xlabel("Spanwise Position (m)");
+xlabel('Normalised Radial position, r/R');
+ylabel("Bending Stress, MPa");
+title("Stress Distribution Convergence Using Binary Search");
 
 legend("show", "Location", "bestoutside");
 grid on
@@ -79,9 +80,10 @@ plot(lin, history.secondMomentAreas(end,:), ...
      'k', 'LineWidth', 2.0, ...
      'DisplayName', 'Final Converged');
 
-xlabel("Spanwise Position (m)");
-ylabel('Second Moment of Area (m^{4})')
-title("Second Moment of Area Convergence using Binary Search");
+% xlabel("Spanwise Position (m)");
+xlabel('Normalised Radial Position, r/R');
+ylabel('Second Moment of Area, m^{4}')
+title("Second Moment of Area Convergence Using Binary Search");
 
 legend("show", "Location", "bestoutside");
 grid on

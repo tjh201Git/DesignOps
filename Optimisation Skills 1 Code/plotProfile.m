@@ -15,4 +15,5 @@ plot(lin, yt);
 xlabel('Position along the chord (m)');
 ylabel('Positive Height (m)');
 title('Aerofoil Profile');
+ylim([-0.075,0.075])
 grid on;

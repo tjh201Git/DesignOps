@@ -13,7 +13,7 @@ thickness = 0.03;
 
 engFuncs = makeEngFuncs;
 
-volume = engFuncs.findVolumeSkinMethod(chord, thickness);
+% volume = engFuncs.findVolumeSkinMethod(chord, thickness);
 
 I = engFuncs.findSecondMomentAreaSkinMethod(chord, thickness);
 I_array = I * ones(N);

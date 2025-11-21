@@ -9,11 +9,18 @@ function funcs = makeEngFuncs
     funcs.applySecondMomentOffset = @applySecondMomentOffset;
     funcs.findAerofoilHeight = @findAerofoilHeight;
     funcs.findVolumeSkinThicknessGradient = @findVolumeSkinThicknessGradient;
+    funcs.findAreaSkinThicknessGradient = @findAreaSkinThicknessGradient;
+
+    funcs.approxCrossSectAreaSkinMethod = @approxCrossSectAreaSkinMethod;
 
 
     funcs.secondMomentAreaArraySkinThicknessQuadratic = @secondMomentAreaArraySkinThicknessQuadratic;
     funcs.findVolumeSkinThicknessQuadratic = @findVolumeSkinThicknessQuadratic;
     funcs.getThicknessAtDistanceFromQuadraticLine = @getThicknessAtDistanceFromQuadraticLine;
+    funcs.findAreaAtDistanceSkinThicknessQuadratic = @findAreaAtDistanceSkinThicknessQuadratic;
+
+
+    funcs.findSolidCrossSectionalArea = @findSolidCrossSectionalArea;
 end
 % Plot the aerofoil profile
 % clc, clear all, close all
@@ -105,7 +112,7 @@ end
 % aerofoil, or we could have it in steps, or we could model it with a
 % function. Since we want optimisation, i think we should do it in small
 % chunks / steps
-function V = findVolumeSkinMethod(chord, thickness)
+function V = findVolumeSkinMethod(chord, thickness, span)
 
     % num_thicknesses = length(thicknesses);
     % chunk_length = chord / num_thicknesses;
@@ -115,7 +122,7 @@ function V = findVolumeSkinMethod(chord, thickness)
     %     V = V + approxCrossSectAreaSkinMethod(thicknesses(i), chord) * chunk_length;
     % end
 
-    V = approxCrossSectAreaSkinMethod(thickness, chord) * chord;
+    V = approxCrossSectAreaSkinMethod(thickness, chord) * span;
 
 end
 
@@ -166,13 +173,17 @@ function thickness = getThicknessAtDistanceFromLinearLine(distance, startThickne
     thickness = min(positiveThickness, startThickness);
 end
 
-function volume = findVolumeSkinThicknessGradient(chord, startThickness, gradient)
-    
-    volume = integral(@getAreaAtDistance, 0, chord);
-
-    function area = getAreaAtDistance(x)
+function area = findAreaSkinThicknessGradient(x, startThickness, gradient, chord)
         thickness = getThicknessAtDistanceFromLinearLine(x, startThickness, gradient);
         area = approxCrossSectAreaSkinMethod(thickness, chord);
+end
+
+function volume = findVolumeSkinThicknessGradient(chord, startThickness, gradient, span)
+    
+    volume = integral(@getAreaAtDistance, 0, span);
+
+    function area = getAreaAtDistance(x)
+        area = findAreaSkinThicknessGradient(x, startThickness, gradient, chord);
     end
 end
 
@@ -216,14 +227,18 @@ function thickness = getThicknessAtDistanceFromQuadraticLine(distance, a, b, c)
     thickness = min(positiveThickness, a);
 end
 
+function area = findAreaAtDistanceSkinThicknessQuadratic(x, a, b, c, chord)
+    thickness = getThicknessAtDistanceFromQuadraticLine(x, a, b, c);
+    area = approxCrossSectAreaSkinMethod(thickness, chord);
+end
 
-function volume = findVolumeSkinThicknessQuadratic(chord, a, b, c)
+
+function volume = findVolumeSkinThicknessQuadratic(chord, span, a, b, c)
     % Compute total skin volume by integrating cross-sectional area along chord
-    volume = integral(@getAreaAtDistance, 0, chord);
+    volume = integral(@getAreaAtDistance, 0, span);
 
     function area = getAreaAtDistance(x)
-        thickness = getThicknessAtDistanceFromQuadraticLine(x, a, b, c);
-        area = approxCrossSectAreaSkinMethod(thickness, chord);
+        area = findAreaAtDistanceSkinThicknessQuadratic(x, a, b, c, chord);
     end
 end
 
