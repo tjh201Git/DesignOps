@@ -35,6 +35,8 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     end
     [bestRMSE_poly, BestOrder] = min(RMSE_poly);
     errorPercent = (bestRMSE_poly / (max(MCSI_samples) - min(MCSI_samples)))*100;
+    disp(errorPercent)
+    disp(BestOrder)
     Phi_poly = Phi_orders{BestOrder};
     A_poly = pinv(Phi_poly) * MCSI_samples;
 
@@ -148,8 +150,8 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     [xSur_opt_poly, f_opt_poly] = ga(f_sur, 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
 
     % Clip within original bounds
-    xSur_opt_poly = max(xSur_opt_poly, Xmin);
-    xSur_opt_poly = min(xSur_opt_poly, Xmax);
+    % xSur_opt_poly = max(xSur_opt_poly, Xmin);
+    % xSur_opt_poly = min(xSur_opt_poly, Xmax);
     fprintf("Best guess according to Poly surrogate: MSCI = %.4f @ (%.4f %.4f %.4f)\n", f_opt_poly, xSur_opt_poly);
 
     % ================================================
@@ -169,17 +171,17 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
     [xSur_opt_rbf, f_opt_rbf] = ga(f_sur, 3, [], [], [], [], lowerBound, upperBound, [], optsGA);
 
     % Clip within original bounds
-    xSur_opt_rbf = max(xSur_opt_rbf, Xmin);
-    xSur_opt_rbf = min(xSur_opt_rbf, Xmax);
+    % xSur_opt_rbf = max(xSur_opt_rbf, Xmin);
+    % xSur_opt_rbf = min(xSur_opt_rbf, Xmax);
     fprintf("Best guess according to RBF surrogate: MSCI = %.4f @ (%.4f %.4f %.4f)\n", f_opt_rbf, xSur_opt_rbf);
 
     % ================================================
     % ======= Zoom Refinement =======================
     % ================================================
-    % zoomFactor = 0.5;
+    % zoomFactor = 0.6;
     halfWidth = 0.5 * zoomFactor .* (Xmax - Xmin);
-    refMin_rbf = max(xSur_opt_poly - halfWidth, Xmin);
-    refMax_rbf = min(xSur_opt_poly + halfWidth, Xmax);
+    refMin_rbf = max(xSur_opt_rbf - halfWidth, Xmin);
+    refMax_rbf = min(xSur_opt_rbf + halfWidth, Xmax);
     
     % switch stageName
     % case "30 node Exploration"
@@ -193,6 +195,11 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
 
     nexttile; %poly tile
     scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_poly, 'filled'); 
+    hold on;
+
+    plot3(xSur_opt_poly(1), xSur_opt_poly(2), xSur_opt_poly(3), ...
+    'wo', 'MarkerSize', 26, 'LineWidth', 2);  % halo
+
     hold on;
 
     plot3(xSur_opt_poly(1), xSur_opt_poly(2), xSur_opt_poly(3), ...
@@ -225,6 +232,11 @@ function [refMin, refMax] = fitSurrogateAndZoomArea(samples, MCSI_samples, zoomF
 
     nexttile; %rbf tile
     scatter3(Xq(:,1), Xq(:,2), Xq(:,3), 25, yhat_rbf, 'filled'); 
+    hold on;
+
+     plot3(xSur_opt_rbf(1), xSur_opt_rbf(2), xSur_opt_rbf(3), ...
+    'wo', 'MarkerSize', 26, 'LineWidth', 2);  % halo
+
     hold on;
 
     plot3(xSur_opt_rbf(1), xSur_opt_rbf(2), xSur_opt_rbf(3), ...
